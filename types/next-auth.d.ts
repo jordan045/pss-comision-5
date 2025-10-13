@@ -4,7 +4,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string
-      rol: "SUPERADMIN" | "ADMIN"   // 👈 agregamos el rol
+      rol: "ALUMNO" | "ADMINISTRATIVO"| "PROFESOR"   // 👈 agregamos el rol
     } & DefaultSession["user"]
   }
 
@@ -12,7 +12,7 @@ declare module "next-auth" {
     id: string
     email: string
     name: string
-    rol: "SUPERADMIN" | "ADMIN"    // 👈 agregamos el rol
+    rol: "ALUMNO" | "ADMINISTRATIVO"| "PROFESOR"   // 👈 agregamos el rol
   }
 }
 
@@ -21,6 +21,6 @@ declare module "next-auth/jwt" {
     id: string
     email: string
     name: string
-    rol: "SUPERADMIN" | "ADMIN"    // 👈 agregamos el rol
+    rol: "ALUMNO" | "ADMINISTRATIVO"| "PROFESOR"    // 👈 agregamos el rol
   }
 }

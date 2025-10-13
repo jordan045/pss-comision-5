@@ -12,7 +12,7 @@ model Usuario {
   nombre   String
   email    String @unique
   password String
-  rol               Rol             @default(ADMIN)
+  rol               Rol             @default(ALUMNO)
   passwordChangedAt DateTime        @default(now())  // 👈 sirve para invalidar sesiones
   passwordResets   PasswordReset[]  // 👈 relación con tokens de reseteo
 }
@@ -29,7 +29,8 @@ model PasswordReset {
 }
 
 enum Rol {
-  SUPERADMIN
-  ADMIN
+  ALUMNO
+  PROFESOR
+  ADMINISTRATIVO
 }
 
