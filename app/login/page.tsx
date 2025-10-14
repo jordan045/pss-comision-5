@@ -67,15 +67,6 @@ export default function LoginPage() {
           {isLoading ? "Iniciando sesión..." : "Ingresar"}
         </Button>
       </form>
-
-      <div className="flex gap-3 mt-4">
-        <Link href="/alumno">
-          <Button variant="secondary">Ingresar como Alumno</Button>
-        </Link>
-        <Link href="/admin">
-          <Button variant="secondary">Ingresar como Administrativo</Button>
-        </Link>
-      </div>
     </main>
   )
 }
