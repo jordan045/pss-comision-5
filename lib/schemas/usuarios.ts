@@ -41,3 +41,13 @@ export function normalizarDireccion<T extends { direccion?: string | "" }>(data:
     : data.direccion?.trim()
   return { ...data, direccion }
 }
+
+// al final del archivo (o donde prefieras)
+export const UsuarioSchema = z.discriminatedUnion("rol", [
+  AlumnoSchema,
+  DocenteSchema,
+  AdministrativoSchema,
+])
+
+export type UsuarioForm = z.infer<typeof UsuarioSchema>
+
