@@ -4,6 +4,7 @@
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod";
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -21,17 +22,15 @@ import {
 export default function CrearCarreraPage() {
   const router = useRouter()
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<CarreraCreate>({
+  type FormT = z.infer<typeof CarreraCreateSchema>;
+
+const { register, handleSubmit, formState: { errors, isSubmitting }, reset } =
+  useForm<FormT>({
     resolver: zodResolver(CarreraCreateSchema),
     defaultValues: {
-      estado: "Activa", // default visual, el backend también puede aplicar su default
-    } as Partial<CarreraCreate>,
-  })
+      estado: "Activa",   // <-- definido; no uses Partial ni lo dejes afuera
+    },
+  });
 
   const onSubmit = async (data: CarreraCreate) => {
     const payload = normalizarCarrera(data)
@@ -91,16 +90,9 @@ export default function CrearCarreraPage() {
             {/* Nivel académico */}
             <div className="space-y-1">
               <Label htmlFor="nivel_academico" className="text-sm">Nivel académico</Label>
-              <select
-                id="nivel_academico"
-                className="w-full h-10 rounded-md border px-3 text-sm"
-                {...register("nivel_academico")}
-                defaultValue=""
-              >
+              <select id="nivel_academico" className="w-full h-10 rounded-md border px-3 text-sm" {...register("nivel_academico")}>
                 <option value="" disabled>Seleccionar nivel</option>
-                {NivelAcademicoEnum.options.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+                {NivelAcademicoEnum.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
               {errors.nivel_academico && (
                 <p className="text-xs text-red-600">{errors.nivel_academico.message as string}</p>
@@ -135,15 +127,8 @@ export default function CrearCarreraPage() {
             {/* Estado */}
             <div className="space-y-1">
               <Label htmlFor="estado" className="text-sm">Estado</Label>
-              <select
-                id="estado"
-                className="w-full h-10 rounded-md border px-3 text-sm"
-                {...register("estado")}
-                defaultValue="Activa"
-              >
-                {EstadoCarreraEnum.options.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+              <select id="estado" className="w-full h-10 rounded-md border px-3 text-sm" {...register("estado")}>
+                {EstadoCarreraEnum.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
               {errors.estado && (
                 <p className="text-xs text-red-600">{errors.estado.message as string}</p>
