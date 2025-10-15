@@ -46,7 +46,7 @@ export const CarreraBaseSchema = z.object({
     .refine((v) => Number.isInteger(v), { message: "Debe ser un entero" })
     .min(1, { message: "Mínimo 1 año" }),
   facultad_asociada: nombre150,
-  estado: EstadoCarreraEnum.default("Activa"),
+  estado: EstadoCarreraEnum,
 })
 
 /**
