@@ -15,19 +15,19 @@ export default function AdminPortal() {
 
       <div className="flex flex-col gap-2 w-64">
         <Link href="/admin/carreras">
-          <Button>Gestión de Carreras</Button>
+          <Button className="w-full">Gestión de Carreras</Button>
         </Link>
         <Link href="/admin/materias">
-          <Button>Gestión de Materias</Button>
+          <Button className="w-full">Gestión de Materias</Button>
         </Link>
         <Link href="/admin/planes">
-          <Button>Gestión de Planes</Button>
+          <Button className="w-full">Gestión de Planes</Button>
         </Link>
         <Link href="/admin/usuarios">
-          <Button>Gestión de Usuarios</Button>
+          <Button className="w-full">Gestión de Usuarios</Button>
         </Link>
         <Link href="/admin/inscripciones">
-          <Button>Gestión de Inscripciones</Button>
+          <Button className="w-full">Gestión de Inscripciones</Button>
         </Link>
 
         {/* 🔒 Botón para cerrar sesión */}

@@ -9,32 +9,39 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { AlumnoSchema, type AlumnoForm, normalizarDireccion } from "@/lib/schemas/usuarios"
+import {
+  AdministrativoSchema,
+  type AdministrativoForm,
+  normalizarDireccion,
+} from "@/lib/schemas/usuarios"
 
-export default function CrearAlumno() {
+export default function CrearAdministrativo() {
   const router = useRouter()
-  const { register, handleSubmit, formState: { errors, isSubmitting } } =
-    useForm<AlumnoForm>({
-      resolver: zodResolver(AlumnoSchema),
-      defaultValues: { rol: "alumno", cuil: "", obra_social: "" },
-    })
 
-  const onSubmit = async (data: AlumnoForm) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<AdministrativoForm>({
+    resolver: zodResolver(AdministrativoSchema),
+    defaultValues: { rol: "administrativo" },
+  })
+
+  const onSubmit = async (data: AdministrativoForm) => {
     const payload = normalizarDireccion(data)
-    // TODO: POST payload
+    // TODO: POST payload al backend
     router.push("/admin/usuarios/crear/exito")
   }
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
       <section className="w-full max-w-md">
-        <h2 className="text-center text-2xl font-semibold mb-6">Crear Alumno</h2>
+        <h2 className="text-center text-2xl font-semibold mb-6">Crear Administrativo</h2>
 
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Rol fijo */}
             <input type="hidden" {...register("rol")} />
-            <input type="hidden" {...register("cuil")} />
-            <input type="hidden" {...register("obra_social")} />
 
             <div className="space-y-1">
               <Label htmlFor="nombre" className="text-sm">Nombre</Label>
@@ -56,7 +63,13 @@ export default function CrearAlumno() {
 
             <div className="space-y-1">
               <Label htmlFor="dni" className="text-sm">DNI</Label>
-              <Input id="dni" inputMode="numeric" pattern="\d*" placeholder="Solo números" {...register("dni")} />
+              <Input
+                id="dni"
+                inputMode="numeric"
+                pattern="\d*"
+                placeholder="Solo números"
+                {...register("dni")}
+              />
               {errors.dni && <p className="text-xs text-red-600">{errors.dni.message}</p>}
             </div>
 
@@ -66,11 +79,35 @@ export default function CrearAlumno() {
               {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
             </div>
 
+            <div className="space-y-1">
+              <Label htmlFor="cuil" className="text-sm">CUIL</Label>
+              <Input
+                id="cuil"
+                inputMode="numeric"
+                pattern="\d*"
+                placeholder="Sin guiones ni puntos"
+                {...register("cuil")}
+              />
+              {errors.cuil && <p className="text-xs text-red-600">{errors.cuil.message}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="obra_social" className="text-sm">Obra social</Label>
+              <Input id="obra_social" {...register("obra_social")} />
+              {errors.obra_social && <p className="text-xs text-red-600">{errors.obra_social.message}</p>}
+            </div>
+
             <div className="grid grid-cols-2 gap-3 pt-2">
               <Link href="/admin/usuarios/crear">
-                <Button type="button" variant="secondary" className="w-full h-10">Volver</Button>
+                <Button type="button" variant="secondary" className="w-full h-10">
+                  Volver
+                </Button>
               </Link>
-              <Button type="submit" className="w-full h-10 bg-black hover:bg-black/90" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full h-10 bg-black hover:bg-black/90"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Creando..." : "Crear"}
               </Button>
             </div>
