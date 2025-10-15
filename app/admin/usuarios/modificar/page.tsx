@@ -19,7 +19,7 @@ import {
 } from "@/lib/schemas/usuarios"
 
 // --- Tipos auxiliares para el usuario traído del backend ---
-type Rol = "alumno" | "docente" | "administrativo"
+type Rol = "ALUMNO" | "PROFESOR" | "ADMINISTRATIVO"
 type Usuario =
   | (AlumnoForm & { id: string })
   | (DocenteForm & { id: string })
@@ -116,7 +116,7 @@ function EditarUsuarioCard({
 
   // Aseguramos defaults válidos para el discriminated union
   const defaults: UsuarioForm = useMemo(() => {
-    if (rol === "alumno") {
+    if (rol === "ALUMNO") {
       // alumno debe tener cuil y obra_social === ""
       return {
         ...(usuario as any),
@@ -139,8 +139,11 @@ function EditarUsuarioCard({
   })
 
   const onSubmit = async (data: UsuarioForm) => {
+    console.log("✅ onSubmit ejecutado", data)
     const payload = normalizarDireccion(data)
+    console.log("entre al fetch");
     try {
+      console.log("entre al fetch");
       const res = await fetch(`/api/usuarios/${usuario.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -152,10 +155,13 @@ function EditarUsuarioCard({
       alert("No se pudo guardar. Intentá nuevamente.")
     }
   }
+  const onError = (errors: any) => {
+  console.log("❌ Errores de validación:", errors)
+}
 
   return (
     <div className="rounded-2xl border bg-white p-6 shadow-sm">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-4">
         {/* rol oculto para mantener el discriminator */}
         <input type="hidden" {...register("rol")} />
 
@@ -190,7 +196,7 @@ function EditarUsuarioCard({
         </div>
 
         {/* Campos adicionales según rol */}
-        {rol !== "alumno" && (
+        {rol !== "ALUMNO" && (
           <>
             <div className="space-y-1">
               <Label htmlFor="cuil" className="text-sm">CUIL</Label>
@@ -199,17 +205,17 @@ function EditarUsuarioCard({
             </div>
             <div className="space-y-1">
               <Label htmlFor="obra_social" className="text-sm">Obra social</Label>
-              <Input id="obra_social" {...register("obra_social")} />
-              {errors?.obra_social && <p className="text-xs text-red-600">{errors.obra_social.message as string}</p>}
+              <Input id="obra_social" {...register("obraSocial")} />
+              {errors?.obraSocial && <p className="text-xs text-red-600">{errors.obraSocial.message as string}</p>}
             </div>
           </>
         )}
 
         {/* Para alumno: ocultos y en "" (cumple el literal del schema) */}
-        {rol === "alumno" && (
+        {rol === "ALUMNO" && (
           <>
             <input type="hidden" {...register("cuil")} value="" />
-            <input type="hidden" {...register("obra_social")} value="" />
+            <input type="hidden" {...register("obraSocial")} value="" />
           </>
         )}
 

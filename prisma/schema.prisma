@@ -1,3 +1,6 @@
+// ---------------------------------------------------
+// 1. Configuración Base
+// ---------------------------------------------------
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,25 +10,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------
+// 2. Modelos de Autenticación y Roles
+// ---------------------------------------------------
 model Usuario {
-  id       Int    @id @default(autoincrement())
-  nombre   String
-  email    String @unique
-  password String
+  id                Int             @id @default(autoincrement())
+  nombre            String
+  apellido          String
+  dni               String          @unique
+  cuil              String?         @unique
+  email             String          @unique
+  password          String
   rol               Rol             @default(ALUMNO)
-  passwordChangedAt DateTime        @default(now())  // 👈 sirve para invalidar sesiones
-  passwordResets   PasswordReset[]  // 👈 relación con tokens de reseteo
+  activo            Boolean         @default(true)
+  passwordChangedAt DateTime        @default(now())
+  passwordResets    PasswordReset[]
+
+  // ---- Atributos específicos según el rol ----
+  // Rol = ALUMNO
+  legajo            String?         @unique
+  fechaIngreso      DateTime?
+
+  // Rol = PROFESOR
+  tituloProfesional String?
+  antiguedad        Int?
+
+  // Rol = ADMINISTRATIVO
+  obraSocial        String?
+
+  // ---- Relaciones ----
+  inscripciones     InscripcionCarrera[] // inscripciones a carreras
 }
 
 model PasswordReset {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  token      String   @unique
-  expiresAt  DateTime
-  used       Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  usuario    Usuario  @relation(fields: [userId], references: [id])
+  usuario Usuario @relation(fields: [userId], references: [id])
 }
 
 enum Rol {
@@ -34,3 +59,84 @@ enum Rol {
   ADMINISTRATIVO
 }
 
+// ---------------------------------------------------
+// 3. Modelos Académicos
+// ---------------------------------------------------
+model Carrera {
+  id                Int      @id @default(autoincrement())
+  codigo            String   @unique
+  nombre            String   @unique
+  titulo            String
+  nivelAcademico    String
+  duracionAnios     Int
+  facultad          String
+  estado            String   @default("ACTIVA")
+  fechaCreacion     DateTime @default(now())
+  fechaModificacion DateTime @updatedAt
+
+  planes        PlanDeEstudio[]
+  inscripciones InscripcionCarrera[]
+}
+
+model PlanDeEstudio {
+  id                Int      @id @default(autoincrement())
+  codigo            String   @unique
+  version           String
+  fechaVigencia     DateTime
+  estado            String   @default("VIGENTE")
+  carreraId         Int
+  carrera           Carrera  @relation(fields: [carreraId], references: [id])
+  fechaCreacion     DateTime @default(now())
+  fechaModificacion DateTime @updatedAt
+
+  materias      MateriaPlan[]
+  inscripciones InscripcionCarrera[]
+}
+
+model Materia {
+  id                Int      @id @default(autoincrement())
+  codigo            String   @unique
+  nombre            String   @unique
+  creditos          Int
+  cargaHoraria      Int
+  descripcion       String?
+  estado            String   @default("ACTIVA")
+  fechaCreacion     DateTime @default(now())
+  fechaModificacion DateTime @updatedAt
+
+  planes            MateriaPlan[]
+}
+
+// ---------------------------------------------------
+// 4. Inscripciones
+// ---------------------------------------------------
+model InscripcionCarrera {
+  id                Int      @id @default(autoincrement())
+  usuarioId         Int
+  carreraId         Int
+  planDeEstudioId   Int
+  fechaInscripcion  DateTime @default(now())
+  estado            String   @default("ACTIVA")
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id])
+  carrera     Carrera      @relation(fields: [carreraId], references: [id])
+  plan        PlanDeEstudio @relation(fields: [planDeEstudioId], references: [id])
+
+  @@unique([usuarioId, carreraId])
+}
+
+// ---------------------------------------------------
+// 5. Tablas Intermedias
+// ---------------------------------------------------
+
+// Relación N:M entre Materia y PlanDeEstudio
+model MateriaPlan {
+  materiaId       Int
+  planDeEstudioId Int
+  tipo            String  // Ej: 'Obligatoria', 'Optativa'
+
+  materia        Materia        @relation(fields: [materiaId], references: [id])
+  planDeEstudio  PlanDeEstudio  @relation(fields: [planDeEstudioId], references: [id])
+
+  @@id([materiaId, planDeEstudioId])
+}

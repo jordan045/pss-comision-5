@@ -24,13 +24,24 @@ export default function CrearDocente() {
     formState: { errors, isSubmitting },
   } = useForm<DocenteForm>({
     resolver: zodResolver(DocenteSchema),
-    defaultValues: { rol: "docente" },
+    defaultValues: { rol: "PROFESOR" },
   })
 
   const onSubmit = async (data: DocenteForm) => {
     const payload = normalizarDireccion(data)
-    // TODO: POST payload al backend
-    router.push("/admin/usuarios/crear/exito")
+    
+    const res = await fetch("/api/usuarios/crear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  
+    if (res.ok) {
+      router.push("/admin/usuarios/crear/exito")
+    } else {
+      const error = await res.json()
+      alert(error.error || "Error al crear usuario")
+    }
   }
 
   return (
@@ -93,8 +104,8 @@ export default function CrearDocente() {
 
             <div className="space-y-1">
               <Label htmlFor="obra_social" className="text-sm">Obra social</Label>
-              <Input id="obra_social" {...register("obra_social")} />
-              {errors.obra_social && <p className="text-xs text-red-600">{errors.obra_social.message}</p>}
+              <Input id="obra_social" {...register("obraSocial")} />
+              {errors.obraSocial && <p className="text-xs text-red-600">{errors.obraSocial.message}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">

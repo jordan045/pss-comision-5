@@ -24,14 +24,25 @@ export default function CrearAdministrativo() {
     formState: { errors, isSubmitting },
   } = useForm<AdministrativoForm>({
     resolver: zodResolver(AdministrativoSchema),
-    defaultValues: { rol: "administrativo" },
+    defaultValues: { rol: "ADMINISTRATIVO" },
   })
 
   const onSubmit = async (data: AdministrativoForm) => {
-    const payload = normalizarDireccion(data)
-    // TODO: POST payload al backend
+  const payload = normalizarDireccion(data)
+  
+  const res = await fetch("/api/usuarios/crear", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+
+  if (res.ok) {
     router.push("/admin/usuarios/crear/exito")
+  } else {
+    const error = await res.json()
+    alert(error.error || "Error al crear usuario")
   }
+}
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
@@ -93,8 +104,8 @@ export default function CrearAdministrativo() {
 
             <div className="space-y-1">
               <Label htmlFor="obra_social" className="text-sm">Obra social</Label>
-              <Input id="obra_social" {...register("obra_social")} />
-              {errors.obra_social && <p className="text-xs text-red-600">{errors.obra_social.message}</p>}
+              <Input id="obra_social" {...register("obraSocial")} />
+              {errors.obraSocial && <p className="text-xs text-red-600">{errors.obraSocial.message}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
