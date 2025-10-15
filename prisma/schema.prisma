@@ -1,3 +1,6 @@
+// ---------------------------------------------------
+// 1. Configuración Base (No se toca)
+// ---------------------------------------------------
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,30 +10,192 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------
+// 2. Modelos de Autenticación y Roles (No se tocan)
+// ---------------------------------------------------
 model Usuario {
-  id       Int    @id @default(autoincrement())
-  nombre   String
-  email    String @unique
-  password String
+  id                Int             @id @default(autoincrement())
+  nombre            String
+  email             String          @unique
+  password          String
   rol               Rol             @default(ALUMNO)
-  passwordChangedAt DateTime        @default(now())  // 👈 sirve para invalidar sesiones
-  passwordResets   PasswordReset[]  // 👈 relación con tokens de reseteo
+  passwordChangedAt DateTime        @default(now())
+  passwordResets    PasswordReset[]
+
+  // Relaciones con los perfiles específicos
+  perfilEstudiante  Estudiante?
+  perfilDocente     Docente?
 }
 
 model PasswordReset {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  token      String   @unique
-  expiresAt  DateTime
-  used       Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  usuario    Usuario  @relation(fields: [userId], references: [id])
+  usuario Usuario @relation(fields: [userId], references: [id])
 }
 
 enum Rol {
   ALUMNO
   PROFESOR
   ADMINISTRATIVO
+}
+
+// ---------------------------------------------------
+// 3. Modelos de Perfiles (Vinculados a Usuario)
+// ---------------------------------------------------
+model Estudiante {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int      @unique
+  legajo      String   @unique
+  
+  usuario      Usuario @relation(fields: [usuarioId], references: [id])
+  
+  inscripciones         Inscripcion[]
+  certificados          Certificado[]
+  inscripcionesPlan     InscriptoEn[]
+}
+
+model Docente {
+  id                  Int      @id @default(autoincrement())
+  usuarioId           Int      @unique
+  tituloProfesional   String
+  
+  usuario     Usuario @relation(fields: [usuarioId], references: [id])
+  catedras    Catedra[] // Un docente puede impartir varias cátedras
+}
+
+// ---------------------------------------------------
+// 4. Modelos Académicos
+// ---------------------------------------------------
+model Carrera {
+  id                 Int      @id @default(autoincrement())
+  nombre             String   @unique
+  duracionAnios      Int
+  fechaCreacion      DateTime @default(now())
+  fechaModificacion  DateTime @updatedAt
+  
+  materias MateriaCarrera[]
+}
+
+model PlanDeEstudio {
+  id              Int      @id @default(autoincrement())
+  version         String   @unique
+  fechaVigencia   DateTime
+  estado          String
+  fechaCreacion   DateTime @default(now())
+  
+  materias            Materia[]
+  inscripcionesEstudiantes   InscriptoEn[]
+}
+
+model Materia {
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  planDeEstudioId Int
+  
+  planDeEstudio   PlanDeEstudio    @relation(fields: [planDeEstudioId], references: [id])
+  carreras        MateriaCarrera[]
+  catedras        Catedra[]
+  inscripciones   Inscripcion[]
+}
+
+// ---------------------------------------------------
+// 5. Modelos Operacionales del Curso
+// ---------------------------------------------------
+model Catedra {
+  id        Int            @id @default(autoincrement())
+  anio      Int
+  periodo   String
+  materiaId Int
+  docenteId Int // Como se especificó, una cátedra tiene un docente
+  
+  materia             Materia             @relation(fields: [materiaId], references: [id])
+  docente             Docente             @relation(fields: [docenteId], references: [id])
+  eventosEvaluacion   EventoEvaluacion[]
+  
+  @@unique([anio, periodo, materiaId])
+}
+
+model EventoEvaluacion {
+  id          Int                 @id @default(autoincrement())
+  nombre      String
+  tipo        String
+  fecha       DateTime
+  estado      String
+  catedraId   Int
+  
+  catedra             Catedra             @relation(fields: [catedraId], references: [id])
+  resultadosAlumnos   ResultadosAlumnos[]
+}
+
+model Inscripcion {
+  id        Int                 @id @default(autoincrement())
+  fecha     DateTime            @default(now())
+  estado    String
+  detalles  String?
+  estudianteId  Int
+  materiaId     Int
+  
+  estudiante          Estudiante          @relation(fields: [estudianteId], references: [id])
+  materia             Materia             @relation(fields: [materiaId], references: [id])
+  resultadosAlumnos   ResultadosAlumnos[]
+  
+  @@unique([estudianteId, materiaId])
+}
+
+model ResultadosAlumnos {
+  id                    Int      @id @default(autoincrement())
+  nota                  Float?
+  fechaCarga            DateTime @default(now())
+  estado                String
+  inscripcionId         Int
+  eventoEvaluacionId    Int
+  
+  inscripcion         Inscripcion      @relation(fields: [inscripcionId], references: [id])
+  eventoEvaluacion    EventoEvaluacion @relation(fields: [eventoEvaluacionId], references: [id])
+  
+  @@unique([inscripcionId, eventoEvaluacionId])
+}
+
+model Certificado {
+  id                  Int      @id @default(autoincrement())
+  codigoVerificacion  String   @unique
+  tipo                String
+  fechaEmision        DateTime @default(now())
+  estudianteId        Int
+  
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id])
+}
+
+// ---------------------------------------------------
+// 6. Modelos Intermedios (Tablas de Unión Solicitadas)
+// ---------------------------------------------------
+
+// Resuelve la relación Muchos a Muchos entre Estudiante y PlanDeEstudio
+model InscriptoEn {
+  estudianteId      Int
+  planDeEstudioId   Int
+  fechaInscripcion  DateTime @default(now())
+  
+  estudiante    Estudiante    @relation(fields: [estudianteId], references: [id])
+  planDeEstudio PlanDeEstudio @relation(fields: [planDeEstudioId], references: [id])
+  
+  @@id([estudianteId, planDeEstudioId])
+}
+
+// Resuelve la relación Muchos a Muchos entre Materia y Carrera
+model MateriaCarrera {
+  materiaId Int
+  carreraId Int
+  tipo      String // Ej: 'Obligatoria', 'Optativa'
+  
+  materia Materia @relation(fields: [materiaId], references: [id])
+  carrera Carrera @relation(fields: [carreraId], references: [id])
+  
+  @@id([materiaId, carreraId])
 }
 
