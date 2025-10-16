@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 
     // Buscar el usuario
     const usuario = await prisma.usuario.findUnique({
-      where: { dni },
+      where: { dni , activo: true},
     })
 
     if (!usuario) {
