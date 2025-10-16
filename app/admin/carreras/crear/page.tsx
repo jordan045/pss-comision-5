@@ -35,7 +35,7 @@ const { register, handleSubmit, formState: { errors, isSubmitting }, reset } =
   const onSubmit = async (data: CarreraCreate) => {
     const payload = normalizarCarrera(data)
     try {
-      const res = await fetch("/api/carreras", {
+      const res = await fetch("/api/carreras/crear", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -43,7 +43,7 @@ const { register, handleSubmit, formState: { errors, isSubmitting }, reset } =
       if (!res.ok) throw new Error()
       // opcional: limpiar form y/o redirigir
       reset()
-      router.push("/admin/carreras?msg=creada")
+      router.push("/admin/carreras/crear?msg=creada")
     } catch {
       alert("No se pudo crear la carrera. Intentá nuevamente.")
     }
