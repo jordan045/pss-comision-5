@@ -24,9 +24,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
         const remember = (credentials as any)?.remember === "true"
 
-        // Buscar usuario en la base
-        const user = await prisma.usuario.findUnique({
-          where: { email },
+
+        // Buscar usuario en la base, solo si está activo
+        const user = await prisma.usuario.findFirst({
+          where: { email, activo: true },
         })
         if (!user) return null
 

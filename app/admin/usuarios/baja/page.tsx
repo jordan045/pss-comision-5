@@ -66,20 +66,15 @@ export default function BajaUsuarioPage() {
     setDandoBaja(true)
 
     try {
-      // ⚠️ AJUSTAR ENDPOINT REAL DE BAJA:
-      // Variante A (REST clásico):
+      // Ahora la baja es lógica: actualiza 'activo' a false
       const BAJA_ENDPOINT = `/api/usuarios/${usuario.id}/baja`
-      // Variante B (DELETE directo):
-      // const BAJA_ENDPOINT = `/api/usuarios/${usuario.id}`
-
       const res = await fetch(BAJA_ENDPOINT, {
-        method: "POST", // si usás variante B, cambiá a "DELETE"
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motivo: "baja por solicitud" }), // opcional
+        body: JSON.stringify({ activo: false, motivo: "baja por solicitud" }),
       })
 
       if (!res.ok) throw new Error()
-      // Redirigí a una pantalla de éxito o al listado:
       router.push("/admin/usuarios?msg=baja-ok")
     } catch {
       setError("No se pudo dar de baja. Intentá nuevamente.")
