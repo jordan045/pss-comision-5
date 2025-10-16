@@ -16,13 +16,24 @@ export default function CrearAlumno() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
     useForm<AlumnoForm>({
       resolver: zodResolver(AlumnoSchema),
-      defaultValues: { rol: "alumno", cuil: "", obra_social: "" },
+      defaultValues: { rol: "ALUMNO", cuil: "", obraSocial: "" },
     })
 
   const onSubmit = async (data: AlumnoForm) => {
     const payload = normalizarDireccion(data)
-    // TODO: POST payload
-    router.push("/admin/usuarios/crear/exito")
+    
+    const res = await fetch("/api/usuarios/crear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  
+    if (res.ok) {
+      router.push("/admin/usuarios/crear/exito")
+    } else {
+      const error = await res.json()
+      alert(error.error || "Error al crear usuario")
+    }
   }
 
   return (
@@ -34,7 +45,7 @@ export default function CrearAlumno() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <input type="hidden" {...register("rol")} />
             <input type="hidden" {...register("cuil")} />
-            <input type="hidden" {...register("obra_social")} />
+            <input type="hidden" {...register("obraSocial")} />
 
             <div className="space-y-1">
               <Label htmlFor="nombre" className="text-sm">Nombre</Label>

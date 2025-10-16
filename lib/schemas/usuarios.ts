@@ -15,22 +15,22 @@ export type PersonaBase = z.infer<typeof PersonaBaseSchema>
 /** Esquemas por rol */
 export const AlumnoSchema = PersonaBaseSchema.extend({
   cuil: z.literal(""),
-  obra_social: z.literal(""),
-  rol: z.literal("alumno"),
+  obraSocial: z.literal(""),
+  rol: z.literal("ALUMNO"),
 })
 export type AlumnoForm = z.infer<typeof AlumnoSchema>
 
 export const DocenteSchema = PersonaBaseSchema.extend({
   cuil: z.string().trim().min(11, "CUIL inválido").max(13),
-  obra_social: z.string().trim().min(1, "Obra social obligatoria"),
-  rol: z.literal("docente"),
+  obraSocial: z.string().trim().min(1, "Obra social obligatoria"),
+  rol: z.literal("PROFESOR"),
 })
 export type DocenteForm = z.infer<typeof DocenteSchema>
 
 export const AdministrativoSchema = PersonaBaseSchema.extend({
   cuil: z.string().trim().min(11, "CUIL inválido").max(13),
-  obra_social: z.string().trim().min(1, "Obra social obligatoria"),
-  rol: z.literal("administrativo"),
+  obraSocial: z.string().trim().min(1, "Obra social obligatoria"),
+  rol: z.literal("ADMINISTRATIVO"),
 })
 export type AdministrativoForm = z.infer<typeof AdministrativoSchema>
 
