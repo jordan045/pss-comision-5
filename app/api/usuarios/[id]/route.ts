@@ -1,45 +1,34 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> } // 👈 params es Promise
 ) {
   try {
-    const data = await req.json()
-    const userId = parseInt(params.id)
-
+    const { id } = await context.params;        // 👈 await acá
+    const userId = parseInt(id, 10)
     if (isNaN(userId)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    const usuarioExistente = await prisma.usuario.findUnique({
-      where: { id: userId },
-    })
+    const data = await req.json()
 
+    const usuarioExistente = await prisma.usuario.findUnique({ where: { id: userId } })
     if (!usuarioExistente) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
     }
 
-    // Normalizamos el rol para consistencia
-    const rol = data.rol?.toUpperCase() || usuarioExistente.rol
+    const rol = data.rol?.toUpperCase() ?? usuarioExistente.rol
 
-    // Validar duplicados (si cambiaron email, dni o cuil)
     const duplicado = await prisma.usuario.findFirst({
       where: {
         AND: [
           { id: { not: userId } },
-          {
-            OR: [
-              { email: data.email },
-              { dni: data.dni },
-              { cuil: data.cuil ?? undefined },
-            ],
-          },
+          { OR: [{ email: data.email }, { dni: data.dni }, { cuil: data.cuil ?? undefined }] },
         ],
       },
     })
-
     if (duplicado) {
       return NextResponse.json(
         { error: "DNI, CUIL o Email ya existen en otro usuario" },
@@ -47,7 +36,6 @@ export async function PUT(
       )
     }
 
-    // Actualizamos con los nuevos datos
     const usuarioActualizado = await prisma.usuario.update({
       where: { id: userId },
       data: {
@@ -65,15 +53,9 @@ export async function PUT(
       },
     })
 
-    return NextResponse.json(
-      { ok: true, usuario: usuarioActualizado },
-      { status: 200 }
-    )
+    return NextResponse.json({ ok: true, usuario: usuarioActualizado }, { status: 200 })
   } catch (error) {
     console.error("Error actualizando usuario:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }

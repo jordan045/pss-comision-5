@@ -1,21 +1,25 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }   // 👈 params asíncrono en Next 15
+) {
   try {
+    const { id } = await context.params            // 👈 await
     const { activo, motivo } = await req.json()
-    const id = Number(params.id)
-    if (!id || typeof activo !== "boolean") {
+
+    const userId = Number(id)
+    if (!Number.isFinite(userId) || typeof activo !== "boolean") {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 })
     }
 
-    // Actualiza el campo 'activo' del usuario
     const usuarioActualizado = await prisma.usuario.update({
-      where: { id },
+      where: { id: userId },
       data: { activo },
     })
 
-    // Opcional: podrías guardar el motivo en otra tabla de auditoría
+    // TODO opcional: persistir 'motivo' en tabla de auditoría
 
     return NextResponse.json({ ok: true, usuario: usuarioActualizado })
   } catch (error) {
