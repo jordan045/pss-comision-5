@@ -121,8 +121,8 @@ function EditarUsuarioCard({
       return {
         ...(usuario as any),
         cuil: "",
-        obra_social: "",
-        rol: "alumno",
+        obraSocial: "",
+        rol: "ALUMNO",
       }
     }
     // docente / administrativo traen sus strings reales
@@ -150,7 +150,7 @@ function EditarUsuarioCard({
         body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error()
-      router.push("/admin/usuarios/crear/exito")
+      router.push("/admin/usuarios/modificar/exito")
     } catch {
       alert("No se pudo guardar. Intentá nuevamente.")
     }
@@ -204,8 +204,8 @@ function EditarUsuarioCard({
               {errors?.cuil && <p className="text-xs text-red-600">{errors.cuil.message as string}</p>}
             </div>
             <div className="space-y-1">
-              <Label htmlFor="obra_social" className="text-sm">Obra social</Label>
-              <Input id="obra_social" {...register("obraSocial")} />
+              <Label htmlFor="obraSocial" className="text-sm">Obra social</Label>
+              <Input id="obraSocial" {...register("obraSocial")} />
               {errors?.obraSocial && <p className="text-xs text-red-600">{errors.obraSocial.message as string}</p>}
             </div>
           </>

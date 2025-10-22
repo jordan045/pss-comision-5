@@ -108,6 +108,11 @@ export default function CrearDocente() {
               {errors.obraSocial && <p className="text-xs text-red-600">{errors.obraSocial.message}</p>}
             </div>
 
+            <div className="space-y-1">
+              <Label htmlFor="password" className="text-sm">Contraseña</Label>
+              <Input type="password" {...register("password")} required />
+            </div>
+
             <div className="grid grid-cols-2 gap-3 pt-2">
               <Link href="/admin/usuarios/crear">
                 <Button type="button" variant="secondary" className="w-full h-10">

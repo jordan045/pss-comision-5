@@ -19,6 +19,7 @@ model Usuario {
   apellido          String
   dni               String          @unique
   cuil              String?         @unique
+  direccion         String?
   email             String          @unique
   password          String
   rol               Rol             @default(ALUMNO)

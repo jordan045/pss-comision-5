@@ -21,13 +21,13 @@ export default function CrearAlumno() {
 
   const onSubmit = async (data: AlumnoForm) => {
     const payload = normalizarDireccion(data)
-    
+
     const res = await fetch("/api/usuarios/crear", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
-  
+
     if (res.ok) {
       router.push("/admin/usuarios/crear/exito")
     } else {
@@ -75,6 +75,11 @@ export default function CrearAlumno() {
               <Label htmlFor="email" className="text-sm">Email</Label>
               <Input id="email" type="email" {...register("email")} />
               {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="password" className="text-sm">Contraseña</Label>
+              <Input type="password" {...register("password")} required />
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">

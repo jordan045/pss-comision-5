@@ -2,59 +2,52 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcrypt"
 
-
 export async function POST(req: Request) {
   try {
     const data = await req.json()
 
     // Normalizar y sanitizar inputs
-    const nombre = typeof data.nombre === 'string' ? data.nombre.trim() : ''
-    const apellido = typeof data.apellido === 'string' ? data.apellido.trim() : ''
-    const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : ''
-    const dni = typeof data.dni === 'string' ? data.dni.trim() : ''
-    const cuil = typeof data.cuil === 'string' && data.cuil.trim() !== '' ? data.cuil.trim() : null
+    const nombre   = typeof data.nombre === "string" ? data.nombre.trim() : ""
+    const apellido = typeof data.apellido === "string" ? data.apellido.trim() : ""
+    const email    = typeof data.email === "string"   ? data.email.trim().toLowerCase() : ""
+    const dni      = typeof data.dni === "string"     ? data.dni.trim() : ""
+    const cuil     = typeof data.cuil === "string" && data.cuil.trim() !== "" ? data.cuil.trim() : null
 
-    // Normalizamos el rol para seguridad
-    const rol = typeof data.rol === 'string' ? data.rol.trim().toUpperCase() : undefined
+    // ⚠️ NUEVO: dirección opcional ("", undefined → null)
+    const direccion =
+      typeof data.direccion === "string" && data.direccion.trim() !== ""
+        ? data.direccion.trim()
+        : null
 
-    // Validar rol permitido
-    if (!["ALUMNO", "PROFESOR", "ADMINISTRATIVO"].includes(rol)) {
+    const password = data.password
+    const rol = typeof data.rol === "string" ? data.rol.trim().toUpperCase() : undefined
+
+    if (!["ALUMNO", "PROFESOR", "ADMINISTRATIVO"].includes(rol as string)) {
       return NextResponse.json({ error: "Rol no válido" }, { status: 400 })
     }
 
-    // Validar duplicados básicos: usamos select para obtener sólo campos identificatorios
     const existente = await prisma.usuario.findFirst({
-      where: {
-        OR: [
-          { email },
-          { dni },
-          ...(cuil ? [{ cuil }] : [])
-        ]
-      },
-      select: { id: true, email: true, dni: true, cuil: true }
+      where: { OR: [{ email }, { dni }, ...(cuil ? [{ cuil }] : [])] },
+      select: { id: true, email: true, dni: true, cuil: true },
     })
-
     if (existente) {
-      console.log('Creación de usuario - datos recibidos:', { nombre, apellido, email, dni, cuil, rol })
-      console.log('Creación de usuario - existente encontrado:', existente)
-      return NextResponse.json(
-        { error: "DNI, CUIL o Email existente" },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: "DNI, CUIL o Email existente" }, { status: 409 })
     }
 
-  const hashedPassword = await bcrypt.hash("123456789", 10)
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Crear el usuario según su rol
     const nuevoUsuario = await prisma.usuario.create({
       data: {
         nombre,
         apellido,
         dni,
-        cuil: cuil ?? null,
+        cuil,
         email,
         rol,
-        obraSocial: rol === "ADMINISTRATIVO" ? (data.obra_social ?? null) : null,
+        // ⚠️ NUEVO: persistimos dirección
+        direccion,                         // ← AÑADIDO
+        // ⚠️ FIX: usar camelCase que manda el front
+        obraSocial: rol === "ADMINISTRATIVO" ? (data.obraSocial ?? null) : null,
         tituloProfesional: rol === "PROFESOR" ? (data.tituloProfesional ?? null) : null,
         antiguedad: rol === "PROFESOR" ? (data.antiguedad ?? null) : null,
         legajo: rol === "ALUMNO" ? (data.legajo ?? null) : null,

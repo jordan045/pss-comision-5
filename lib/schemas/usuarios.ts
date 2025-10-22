@@ -9,6 +9,7 @@ export const PersonaBaseSchema = z.object({
   direccion: z.union([z.string().max(200, "Máximo 200"), z.literal("")]).optional(),
   dni: z.string().trim().regex(/^\d{8,12}$/, "El DNI debe tener entre 8 y 12 dígitos numéricos"),
   email: z.string().trim().email("Ingresá un email válido"),
+  password: z.string().min(8, "Mínimo 8 caracteres"),
 })
 export type PersonaBase = z.infer<typeof PersonaBaseSchema>
 
