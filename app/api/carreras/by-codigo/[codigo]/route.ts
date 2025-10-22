@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+// (Opcional pero recomendado con Prisma en Vercel)
+export const runtime = "nodejs";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { codigo: string } }
+  request: NextRequest,
+  context: { params: Promise<{ codigo: string }> }
 ) {
-  const codigo = params.codigo;
+  const { codigo } = await context.params;
+
   if (!codigo) {
     return NextResponse.json(
       { error: "Código de carrera no proporcionado" },
@@ -15,23 +19,16 @@ export async function GET(
 
   try {
     await prisma.$connect();
-    
-    // Buscar la carrera por código
+
     const carrera = await prisma.carrera.findUnique({
-      where: {
-        codigo: codigo,
-      },
+      where: { codigo },
       include: {
         planes: {
           include: {
-            materias: {
-              include: {
-                materia: true
-              }
-            }
-          }
-        }
-      }
+            materias: { include: { materia: true } },
+          },
+        },
+      },
     });
 
     if (!carrera) {
@@ -45,7 +42,10 @@ export async function GET(
   } catch (error) {
     console.error("Error al buscar carrera:", error);
     return NextResponse.json(
-      { error: "Error al buscar la carrera. Verifique la conexión a la base de datos." },
+      {
+        error:
+          "Error al buscar la carrera. Verifique la conexión a la base de datos.",
+      },
       { status: 500 }
     );
   } finally {
