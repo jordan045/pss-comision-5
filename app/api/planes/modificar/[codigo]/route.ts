@@ -1,15 +1,28 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "nodejs"; // Prisma en Vercel → Node.js runtime
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { codigo: string } }
+  request: NextRequest,
+  context: { params: Promise<{ codigo: string }> }
 ) {
   try {
-    const { version, estado } = await request.json();
-    
-    // Validar que tenemos los datos necesarios
-    if (!version || !estado) {
+    const { codigo } = await context.params;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Body inválido o no es JSON" },
+        { status: 400 }
+      );
+    }
+
+    const { version, estado } = (body as { version?: unknown; estado?: unknown }) ?? {};
+
+    if (typeof version === "undefined" || typeof estado === "undefined") {
       return NextResponse.json(
         { error: "La versión y el estado son requeridos" },
         { status: 400 }
@@ -17,9 +30,7 @@ export async function PUT(
     }
 
     const planExistente = await prisma.planDeEstudio.findUnique({
-      where: {
-        codigo: params.codigo,
-      },
+      where: { codigo },
     });
 
     if (!planExistente) {
@@ -30,19 +41,14 @@ export async function PUT(
     }
 
     const planActualizado = await prisma.planDeEstudio.update({
-      where: {
-        codigo: params.codigo,
-      },
+      where: { codigo },
       data: {
-        version,
-        estado,
+        // si necesitás castear tipos, hacelo acá
+        version: version as any,
+        estado: estado as any,
       },
       include: {
-        materias: {
-          include: {
-            materia: true,
-          },
-        },
+        materias: { include: { materia: true } },
       },
     });
 

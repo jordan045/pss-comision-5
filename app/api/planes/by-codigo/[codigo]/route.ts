@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from '@prisma/client';
 
 // Configurar Prisma para no mostrar los logs de consultas
@@ -7,11 +7,11 @@ const prisma = new PrismaClient({
 });
 
 export async function GET(
-  request: Request,
-  { params }: { params: { codigo: string } }
+  request: NextRequest,
+  context: { params: Promise<{ codigo: string }> }
 ) {
   try {
-    const codigo = params.codigo;
+    const { codigo } = await context.params;
     console.log('Buscando plan con código:', codigo);
 
     const plan = await prisma.planDeEstudio.findUnique({
