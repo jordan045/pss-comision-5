@@ -105,6 +105,7 @@ model Materia {
   fechaModificacion DateTime @updatedAt
 
   planes            MateriaPlan[]
+  correlativas      MateriaPlan[] @relation("Correlativas")
 }
 
 // ---------------------------------------------------
@@ -131,12 +132,16 @@ model InscripcionCarrera {
 
 // Relación N:M entre Materia y PlanDeEstudio
 model MateriaPlan {
-  materiaId       Int
-  planDeEstudioId Int
-  tipo            String  // Ej: 'Obligatoria', 'Optativa'
+  materiaId           Int
+  planDeEstudioId     Int
+  tipo                String  // 'Obligatoria', 'Optativa'
+  correlativaId       Int?    // ID de la materia correlativa (opcional)
+  tipoCorrelatividad  String? // 'APROBADA', 'REGULAR', 'CURSADA'
 
-  materia        Materia        @relation(fields: [materiaId], references: [id])
-  planDeEstudio  PlanDeEstudio  @relation(fields: [planDeEstudioId], references: [id])
+  materia             Materia        @relation(fields: [materiaId], references: [id])
+  planDeEstudio       PlanDeEstudio  @relation(fields: [planDeEstudioId], references: [id])
+  correlativa         Materia?       @relation("Correlativas", fields: [correlativaId], references: [id])
 
   @@id([materiaId, planDeEstudioId])
+  @@index([correlativaId])
 }
