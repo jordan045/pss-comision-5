@@ -40,7 +40,9 @@ model Usuario {
   obraSocial        String?
 
   // ---- Relaciones ----
-  inscripciones     InscripcionCarrera[] // inscripciones a carreras
+  inscripciones        InscripcionCarrera[]
+  cursadasDictadas     Cursada[]       @relation("DocentePrincipal")     // Cursadas donde es docente principal
+  cursadasComoDocente  Cursada[]       @relation("DocentesAdicionales")  // Cursadas donde participa como docente adicional
 }
 
 model PasswordReset {
@@ -92,6 +94,7 @@ model PlanDeEstudio {
 
   materias      MateriaPlan[]
   inscripciones InscripcionCarrera[]
+  cursadas      Cursada[] // Relación con cursadas
 }
 
 model Materia {
@@ -107,6 +110,7 @@ model Materia {
 
   planes            MateriaPlan[]
   correlativas      MateriaPlan[] @relation("Correlativas")
+  cursadas          Cursada[]
 }
 
 // ---------------------------------------------------
@@ -120,8 +124,8 @@ model InscripcionCarrera {
   fechaInscripcion  DateTime @default(now())
   estado            String   @default("ACTIVA")
 
-  usuario     Usuario      @relation(fields: [usuarioId], references: [id])
-  carrera     Carrera      @relation(fields: [carreraId], references: [id])
+  usuario     Usuario       @relation(fields: [usuarioId], references: [id])
+  carrera     Carrera       @relation(fields: [carreraId], references: [id])
   plan        PlanDeEstudio @relation(fields: [planDeEstudioId], references: [id])
 
   @@unique([usuarioId, carreraId])
@@ -130,8 +134,6 @@ model InscripcionCarrera {
 // ---------------------------------------------------
 // 5. Tablas Intermedias
 // ---------------------------------------------------
-
-// Relación N:M entre Materia y PlanDeEstudio
 model MateriaPlan {
   materiaId           Int
   planDeEstudioId     Int
@@ -145,4 +147,46 @@ model MateriaPlan {
 
   @@id([materiaId, planDeEstudioId])
   @@index([correlativaId])
+}
+
+// ---------------------------------------------------
+// 6. Modelo: Cursada (modificado según aclaración)
+// ---------------------------------------------------
+model Cursada {
+  id                  Int              @id @default(autoincrement())
+  materiaId           Int
+  planDeEstudioId     Int
+  docentePrincipalId  Int
+  cuatrimestre        Cuatrimestre
+  anio                Int
+  cupoMaximo          Int
+  cupoActual          Int              @default(0)
+  estado              EstadoCursada    @default(ACTIVA)
+  observaciones       String?
+
+  // Relaciones
+  materia             Materia          @relation(fields: [materiaId], references: [id])
+  planDeEstudio       PlanDeEstudio    @relation(fields: [planDeEstudioId], references: [id])
+  docentePrincipal    Usuario          @relation("DocentePrincipal", fields: [docentePrincipalId], references: [id])
+  docentesAdicionales Usuario[]        @relation("DocentesAdicionales")
+
+  fechaCreacion       DateTime         @default(now())
+  fechaModificacion   DateTime         @updatedAt
+
+  // Restricción: no pueden existir dos cursadas activas con mismo docente principal, materia y cuatrimestre
+  @@unique([materiaId, docentePrincipalId, cuatrimestre, anio], name: "cursada_unica_docente")
+}
+
+// ---------------------------------------------------
+// 7. Enums Nuevos
+// ---------------------------------------------------
+enum Cuatrimestre {
+  PRIMERO
+  SEGUNDO
+}
+
+enum EstadoCursada {
+  ACTIVA
+  CERRADA
+  CANCELADA
 }
