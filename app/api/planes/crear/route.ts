@@ -11,9 +11,9 @@ export async function POST(request: Request) {
 
     if (!validatedData.success) {
       return NextResponse.json(
-        { 
-          message: "Datos inválidos", 
-          errors: validatedData.error.format() 
+        {
+          message: "Datos inválidos",
+          errors: validatedData.error.format()
         },
         { status: 400 }
       );
@@ -24,13 +24,16 @@ export async function POST(request: Request) {
     // 2. Crear el plan con sus materias en una transacción
     const nuevoPlan = await prisma.$transaction(async (prismaClient) => {
       // Crear el plan base
-      const plan = await prismaClient.planDeEstudio.create({
+      const plan = await prisma.planDeEstudio.create({
         data: {
           codigo: planData.codigo,
+          nombre: planData.nombre,                    // <- requerido por el modelo
           version: planData.version,
           fechaVigencia: new Date(planData.fechaVigencia),
           estado: planData.estado,
-          carreraId: planData.carreraId,
+          carreras: {                                 // <- relaciona con una Carrera existente
+            connect: { id: planData.carreraId },
+          },
         },
       });
 
@@ -66,7 +69,7 @@ export async function POST(request: Request) {
           { status: 409 }
         );
       }
-      
+
       return NextResponse.json(
         { message: "Error en la base de datos" },
         { status: 400 }

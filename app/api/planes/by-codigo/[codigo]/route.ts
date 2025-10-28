@@ -1,23 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient({ log: ["error", "warn"] });
+// Configurar Prisma para no mostrar los logs de consultas
+const prisma = new PrismaClient({
+  log: ['error', 'warn'],
+});
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { codigo: string } }
+  request: NextRequest,
+  context: { params: Promise<{ codigo: string }> }
 ) {
   try {
-    const { codigo } = params;
+    const { codigo } = await context.params;
+    console.log('Buscando plan con código:', codigo);
 
     const plan = await prisma.planDeEstudio.findUnique({
-      where: { codigo },
+      where: {
+        codigo: codigo,
+      },
       include: {
-        carreras: true,                 // ✅ era 'carrera: true' (incorrecto)
-        materias: { include: { materia: true } },
-        // si querés: inscripciones: true, cursadas: true
+        carreras: true,
+        materias: {
+          include: {
+            materia: true,
+          },
+        },
       },
     });
+
+    console.log('Plan encontrado en el backend:', JSON.stringify(plan, null, 2));
 
     if (!plan) {
       return NextResponse.json(

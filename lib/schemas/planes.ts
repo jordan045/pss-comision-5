@@ -5,12 +5,13 @@ export const EstadoPlanEnum = z.enum(["VIGENTE", "BORRADOR", "INACTIVO"]);
 
 export const PlanCreateSchema = z.object({
   codigo: z.string().min(1, "Código obligatorio"),
+  nombre: z.string().min(1, "Nombre obligatorio"),                  // <- NUEVO
   version: z.string().min(1, "Versión obligatoria"),
   fechaVigencia: z.string().min(1, "Fecha de vigencia obligatoria"),
   estado: EstadoPlanEnum.default("VIGENTE"),
   carreraId: z.coerce.number().int().positive("Carrera obligatoria"),
 
-  // UI derecha del mock: aún no persiste en PlanDeEstudio, sólo UI.
+  // solo UI (no escribir directamente en PlanDeEstudio)
   materiaId: z.coerce.number().int().optional(),
   correlativaId: z.coerce.number().int().optional(),
   tipoCorrelatividad: z.enum(["APROBADA", "REGULAR", "CURSADA"]).optional(),
