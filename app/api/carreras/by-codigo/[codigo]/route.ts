@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ codigo: string }> }
+  _req: NextRequest,
+  { params }: { params: { codigo: string } }
 ) {
-  const { codigo } = await context.params;
+  const { codigo } = params;
 
   if (!codigo) {
     return NextResponse.json(
@@ -18,17 +18,13 @@ export async function GET(
   }
 
   try {
+    // Con Prisma 5+ no es necesario $connect/$disconnect manual en cada request,
+    // pero si lo estás usando en Vercel, no hace daño.
     await prisma.$connect();
 
+    // 1) Traer la carrera por código
     const carrera = await prisma.carrera.findUnique({
       where: { codigo },
-      include: {
-        planes: {
-          include: {
-            materias: { include: { materia: true } },
-          },
-        },
-      },
     });
 
     if (!carrera) {
@@ -38,7 +34,20 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(carrera);
+    // 2) Traer los planes vinculados a esa carrera + materias anidadas
+    const planes = await prisma.planDeEstudio.findMany({
+      where: {
+        carrera: { codigo }, // filtro por relación (no requiere el nombre del campo inverso en Carrera)
+      },
+      include: {
+        materias: {
+          include: { materia: true },
+        },
+      },
+    });
+
+    // 3) Responder con la carrera y un arreglo 'planes'
+    return NextResponse.json({ ...carrera, planes });
   } catch (error) {
     console.error("Error al buscar carrera:", error);
     return NextResponse.json(
