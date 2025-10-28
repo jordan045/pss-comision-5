@@ -53,7 +53,9 @@ export const CarreraBaseSchema = z.object({
  * Para CREATE: todos obligatorios (salvo que quieras permitir default de estado).
  * Las fechas las gestiona el backend.
  */
-export const CarreraCreateSchema = CarreraBaseSchema
+export const CarreraCreateSchema = CarreraBaseSchema.extend({
+  plan_de_estudio_id: z.number().int().positive(),
+});
 
 /**
  * Para UPDATE: permitimos modificar cualquier campo excepto, típicamente, `codigo`

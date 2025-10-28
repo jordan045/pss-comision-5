@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       duracionAnios: validatedData.duracion_estimada,
       facultad: validatedData.facultad_asociada,
       estado: validatedData.estado,
+      planDeEstudioId: validatedData.plan_de_estudio_id,
     };
 
     const nuevaCarrera = await prisma.carrera.create({
