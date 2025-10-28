@@ -31,7 +31,11 @@ export async function GET(
     }
 
     const planes = await prisma.planDeEstudio.findMany({
-      where: { carrera: { codigo } },
+      where: {
+        carreras: {
+          some: { codigo }, // ✅ usa 'some'
+        },
+      },
       include: {
         materias: { include: { materia: true } },
       },
