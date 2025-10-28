@@ -75,22 +75,26 @@ model Carrera {
   fechaCreacion     DateTime @default(now())
   fechaModificacion DateTime @updatedAt
 
-  planes        PlanDeEstudio[]
+  // --- Relaciones ---
+  // Una carrera pertenece a un único plan de estudio
+  planDeEstudioId Int
+  planDeEstudio   PlanDeEstudio @relation(fields: [planDeEstudioId], references: [id])
   inscripciones InscripcionCarrera[]
 }
 
 model PlanDeEstudio {
   id                Int      @id @default(autoincrement())
   codigo            String   @unique
+  nombre            String
   version           String
   fechaVigencia     DateTime
   estado            String   @default("VIGENTE")
-  carreraId         Int
-  carrera           Carrera  @relation(fields: [carreraId], references: [id])
   fechaCreacion     DateTime @default(now())
   fechaModificacion DateTime @updatedAt
 
-  materias      MateriaPlan[]
+  // --- Relaciones ---
+  carreras      Carrera[] // Lista de carreras que usan este plan
+  materias      MateriaPlan[] // Lista de materias en este plan
   inscripciones InscripcionCarrera[]
 }
 
