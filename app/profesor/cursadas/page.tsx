@@ -11,7 +11,7 @@ export default function GestionCursadas() {
           <Button className="w-full">Crear</Button>
         </Link>
 
-        <Link href="/profesor/cursadas/modificar">
+        <Link href="/profesor/cursadas/seleccionar">
           <Button className="w-full">Modificar</Button>
         </Link>
 
