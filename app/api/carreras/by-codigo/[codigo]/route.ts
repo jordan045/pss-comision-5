@@ -21,6 +21,17 @@ export async function GET(
 
     const carrera = await prisma.carrera.findUnique({
       where: { codigo },
+      include: {
+        planDeEstudio: { // Incluye el plan de estudio relacionado
+          include: {
+            materias: { // Dentro del plan, incluye las materias
+              include: {
+                materia: true, // Y dentro de cada MateriaPlan, incluye el objeto Materia completo
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!carrera) {
@@ -30,18 +41,7 @@ export async function GET(
       );
     }
 
-    const planes = await prisma.planDeEstudio.findMany({
-      where: {
-        carreras: {
-          some: { codigo }, // ✅ usa 'some'
-        },
-      },
-      include: {
-        materias: { include: { materia: true } },
-      },
-    });
-
-    return NextResponse.json({ ...carrera, planes });
+    return NextResponse.json(carrera);
   } catch (error) {
     console.error("Error al buscar carrera:", error);
     return NextResponse.json(

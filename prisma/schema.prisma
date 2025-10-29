@@ -76,7 +76,7 @@ model Carrera {
   estado            String   @default("ACTIVA")
   fechaCreacion     DateTime @default(now())
   fechaModificacion DateTime @updatedAt
-
+ 
   // --- Relaciones ---
   // Una carrera pertenece a un único plan de estudio
   planDeEstudioId Int

@@ -1,7 +1,7 @@
 // app/admin/planes/crear/page.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -13,16 +13,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trash2 } from "lucide-react"
+import { Trash2, Loader2 } from "lucide-react"
 
-// --- mocks de materias (reemplazar por fetch real) ---
+// --- Tipos ---
 type Materia = { id: number; nombre: string }
-const materiasMock: Materia[] = [
-  { id: 101, nombre: "Algoritmos y Estructuras de Datos" },
-  { id: 102, nombre: "Análisis Matemático I" },
-  { id: 201, nombre: "Sistemas Operativos" },
-  { id: 202, nombre: "Bases de Datos" },
-]
 const tiposCorrelatividadMock = ["APROBADA", "REGULAR", "CURSADA"] as const
 
 type MateriaAgregada = {
@@ -30,7 +24,7 @@ type MateriaAgregada = {
   materiaNombre: string
   correlativaId?: number
   correlativaNombre?: string
-  tipoCorrelatividad?: (typeof tiposCorrelatividadMock)[number]
+  tipoCorrelatividad?: typeof tiposCorrelatividadMock[number]
 }
 
 // 🔧 Tipo del FORM = INPUT del schema (antes de defaults/coerciones)
@@ -39,15 +33,35 @@ type FormT = z.input<typeof PlanCreateSchema>
 export default function CrearPlanPage() {
   const router = useRouter()
   const [materiasAgregadas, setMateriasAgregadas] = useState<MateriaAgregada[]>([])
+  const [materiasDisponibles, setMateriasDisponibles] = useState<Materia[]>([])
+  const [isLoadingMaterias, setIsLoadingMaterias] = useState(true)
+  const [errorCargaMaterias, setErrorCargaMaterias] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const { register, handleSubmit, control, watch, formState: { errors, isSubmitting } } =
     useForm<FormT>({
       resolver: zodResolver(PlanCreateSchema),
-      defaultValues: { estado: "VIGENTE" }, // ayuda al Select
+      defaultValues: { estado: "VIGENTE" },
     })
 
-  const watchMateriaId = watch("materiaId") // string | undefined
+  // Fetch de materias al cargar el componente
+  useEffect(() => {
+    const fetchMaterias = async () => {
+      try {
+        const res = await fetch("/api/materias") 
+        if (!res.ok) {
+          throw new Error("Error al cargar las materias.")
+        }
+        const data: Materia[] = await res.json()
+        setMateriasDisponibles(data)
+      } catch (err: any) {
+        setErrorCargaMaterias(err.message)
+      } finally {
+        setIsLoadingMaterias(false)
+      }
+    }
+    fetchMaterias()
+  }, [])
 
   const handleAgregarMateria = () => {
     const materiaIdStr = watch("materiaId")           // string | undefined
@@ -55,17 +69,17 @@ export default function CrearPlanPage() {
     const tipoCorrelatividad = watch("tipoCorrelatividad")
 
     if (!materiaIdStr) { alert("Debe seleccionar una materia."); return }
-
+    
     const materiaId = Number(materiaIdStr)
     const correlativaId = correlativaIdStr ? Number(correlativaIdStr) : undefined
 
-    const materia = materiasMock.find(m => m.id === materiaId)
+    const materia = materiasDisponibles.find(m => m.id === materiaId)
     if (!materia) { alert("Materia inválida."); return }
 
     const correlativa = correlativaId != null
-      ? materiasMock.find(m => m.id === correlativaId)
+      ? materiasDisponibles.find(m => m.id === correlativaId)
       : undefined
-
+    
     setMateriasAgregadas(prev => [
       ...prev,
       {
@@ -85,18 +99,21 @@ export default function CrearPlanPage() {
   const onSubmit = async (raw: FormT) => {
     setFormError(null)
 
-    // Parseo con Zod → aplica defaults y coerce (output del schema)
+    if (materiasAgregadas.length === 0) {
+      setFormError("Debe agregar al menos una materia al plan de estudio.")
+      return
+    }
+
     const data = PlanCreateSchema.parse(raw)
     const plan = normalizarPlan(data)
 
     const payload = {
-      ...plan
-      // si querés crear MateriaPlan en el mismo endpoint:
-      // materias: materiasAgregadas.map(m => ({
-      //   materiaId: m.materiaId,
-      //   correlativaId: m.correlativaId,
-      //   tipoCorrelatividad: m.tipoCorrelatividad,
-      // })),
+      ...plan,
+      materias: materiasAgregadas.map(m => ({
+        materiaId: m.materiaId,
+        correlativaId: m.correlativaId,
+        tipoCorrelatividad: m.tipoCorrelatividad,
+      })),
     }
 
     try {
@@ -104,7 +121,7 @@ export default function CrearPlanPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      })
+      });
       if (!res.ok) throw new Error((await res.json()).message || "Error al crear el plan")
       router.push("/admin/planes/exito?accion=crear")
     } catch (e: any) {
@@ -114,7 +131,7 @@ export default function CrearPlanPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-4xl">
+      <Card className="w-full max-w-5xl">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Crear Plan de Estudio</CardTitle>
           <CardDescription>Complete los campos obligatorios del plan</CardDescription>
@@ -170,8 +187,15 @@ export default function CrearPlanPage() {
 
               {/* Columna Derecha (Materias opcionales) */}
               <div className="space-y-4">
-                <div>
-                  <Label>Materias del Plan (opcional)</Label>
+                {isLoadingMaterias ? (
+                  <div className="flex items-center justify-center h-24">
+                    <Loader2 className="mr-2 h-6 w-6 animate-spin text-blue-500" />
+                    <p className="text-gray-600">Cargando materias...</p>
+                  </div>) : errorCargaMaterias ? (
+                  <p className="text-red-500 text-sm">{errorCargaMaterias}</p>
+                ) : (
+                  <>
+                    <Label>Materias del Plan (opcional)</Label>
                   <Controller
                     name="materiaId"
                     control={control}
@@ -184,29 +208,28 @@ export default function CrearPlanPage() {
                             ? ""
                             : String(field.value)
 
-                      return (
-                        <Select
-                          value={value} // <- string OK
-                          onValueChange={(val) => field.onChange(val === "" ? undefined : val)} // string | undefined
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Listado de materias global" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {materiasMock.map((m) => (
-                              <SelectItem key={m.id} value={String(m.id)}>
-                                {m.nombre}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )
-                    }}
-                  />
+                  return (
+                    <Select
+                      value={value}
+                      onValueChange={(val) => field.onChange(val === "" ? undefined : val)}
+                      disabled={isLoadingMaterias || !!errorCargaMaterias}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Listado de materias global" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {materiasDisponibles.map((m) => (
+                          <SelectItem key={m.id} value={String(m.id)}>
+                            {m.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                }}
+              />
 
-                </div>
-
-                <div>
+              <div>
                   <Label>Correlativas</Label>
                   <Controller
                     name="correlativaId"
@@ -219,30 +242,31 @@ export default function CrearPlanPage() {
                             ? ""
                             : String(field.value)
 
-                      return (
-                        <Select
-                          value={value}
-                          onValueChange={(val) => field.onChange(val === "" ? undefined : val)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione correlativa (opcional)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {materiasMock
-                              .filter((m) => m.id !== Number(watch("materiaId") ?? 0))
-                              .map((m) => (
-                                <SelectItem key={m.id} value={String(m.id)}>
-                                  {m.nombre}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      )
-                    }}
-                  />
-                </div>
+                  return (
+                    <Select
+                      value={value}
+                      onValueChange={(val) => field.onChange(val === "" ? undefined : val)}
+                      disabled={isLoadingMaterias || !!errorCargaMaterias}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione correlativa (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {materiasDisponibles
+                          .filter((m) => m.id !== Number(watch("materiaId") ?? 0))
+                          .map((m) => (
+                            <SelectItem key={m.id} value={String(m.id)}>
+                              {m.nombre}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                }}
+              />
+              </div>
 
-                <div>
+              <div>
                   <Label>Tipo de correlatividad</Label>
                   <Controller
                     name="tipoCorrelatividad"
@@ -257,6 +281,8 @@ export default function CrearPlanPage() {
                     )}
                   />
                 </div>
+                </>
+                )} {/* <-- El cierre del fragmento y del ternario debe estar aquí */}
 
                 <Button type="button" onClick={handleAgregarMateria} className="w-full">Agregar Materia</Button>
 
@@ -279,7 +305,7 @@ export default function CrearPlanPage() {
             </div>
 
             <p className="text-xs text-gray-600">Los campos con * son obligatorios</p>
-            {formError && <p className="text-red-500 text-sm font-semibold">{formError}</p>}
+            {formError && <p className="text-red-500 text-sm font-semibold mt-2">{formError}</p>}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => router.back()}>Volver</Button>

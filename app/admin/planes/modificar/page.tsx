@@ -35,8 +35,17 @@ function EditarPlanForm({ plan, onFinish }: EditarPlanFormProps) {
   const [version, setVersion] = useState(plan.version);
   const [estado, setEstado] = useState(plan.estado);
   const [materias] = useState(plan.materias.map(m => m.materia));
+  const [modificationError, setModificationError] = useState<string | null>(null);
   
   const handleModificar = async () => {
+    setModificationError(null); 
+    
+    const noChanges = version === plan.version && estado === plan.estado;
+    if (noChanges) {
+      setModificationError("No se ha realizado ningún cambio en el plan de estudio.");
+      return; 
+    }
+
     try {
       const res = await fetch(`/api/planes/modificar/${plan.codigo}`, {
         method: 'PUT',
@@ -118,6 +127,8 @@ function EditarPlanForm({ plan, onFinish }: EditarPlanFormProps) {
 
             <p className="text-xs text-gray-600 mt-4">Los campos etiquetados con * son obligatorios</p>
             
+            {modificationError && <p className="text-sm text-center font-semibold text-orange-600 mt-4">{modificationError}</p>}
+
             <div className="flex justify-end gap-3 mt-6">
               <a href="/admin/planes">
                 <Button type="button" variant="outline">Volver</Button>
@@ -252,4 +263,3 @@ export default function ModificarPlanPage() {
 
   return null;
 }
-

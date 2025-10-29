@@ -8,66 +8,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Loader2 } from 'lucide-react';
 
-// --- Tipos y Simulación de la Base de Datos ---
+// --- Tipos de datos que esperamos del backend ---
 type Materia = {
   id: number;
   nombre: string;
-  tipo: string;
-  creditos: number;
-  año: number;
+  // Agrega otros campos de materia si los necesitas, ej: codigo, creditos
 };
 
 type PlanDeEstudio = {
   id: number;
   nombre: string;
   estado: "VIGENTE" | "BORRADOR" | "INACTIVO";
-  materias: Materia[];
+  materias: { materia: Materia }[]; // Asumo que la relación es a través de MateriaPlan
 };
 
 type CarreraEncontrada = {
   id: number;
   codigo: string;
   nombre: string;
-  planes: PlanDeEstudio[];
+  planDeEstudio: PlanDeEstudio; // Según tu modelo de Prisma, una carrera tiene UN plan.
 };
-
-// Datos de ejemplo que simulan una carrera encontrada en la BD
-const carreraMock: CarreraEncontrada = {
-  id: 1,
-  codigo: "LIC-COMP",
-  nombre: "Licenciatura en Ciencias de la Computación",
-  planes: [
-    {
-      id: 10,
-      nombre: "Plan de Estudios 2020",
-      estado: "VIGENTE",
-      materias: [
-        { id: 101, nombre: "Algoritmos I", tipo: "Obligatoria", creditos: 8, año: 1 },
-        { id: 102, nombre: "Matemática Discreta", tipo: "Obligatoria", creditos: 8, año: 1 },
-        { id: 201, nombre: "Sistemas Operativos", tipo: "Obligatoria", creditos: 8, año: 2 },
-      ],
-    },
-    {
-      id: 11,
-      nombre: "Plan de Estudios 2023",
-      estado: "VIGENTE",
-      materias: [
-        { id: 101, nombre: "Algoritmos y Estructuras de Datos", tipo: "Obligatoria", creditos: 10, año: 1 },
-        { id: 102, nombre: "Análisis Matemático", tipo: "Obligatoria", creditos: 8, año: 1 },
-        { id: 301, nombre: "Inteligencia Artificial", tipo: "Optativa", creditos: 6, año: 3 },
-      ],
-    },
-    {
-      id: 9,
-      nombre: "Plan de Estudios 2015",
-      estado: "INACTIVO",
-      materias: [
-        { id: 51, nombre: "Introducción a la Programación", tipo: "Obligatoria", creditos: 6, año: 1 },
-      ],
-    },
-  ],
-};
-// --- Fin de la simulación ---
 
 export default function ConsultarPlanesPage() {
   // Estado para controlar el flujo: buscar o consultar
@@ -90,7 +50,8 @@ export default function ConsultarPlanesPage() {
       }
       const carrera = await response.json();
       setCarreraData(carrera);
-      setSelectedPlan(carrera.planes[0] || null);
+      // Como una carrera tiene un solo plan, lo seleccionamos directamente.
+      setSelectedPlan(carrera.planDeEstudio || null);
       setStep('consultar');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al buscar la carrera');
@@ -98,10 +59,6 @@ export default function ConsultarPlanesPage() {
       setIsLoading(false);
     }
   };
-
-  const planesFiltrados = carreraData?.planes.filter(p => 
-    filtroEstado === 'todos' || p.estado === filtroEstado
-  ) || [];
 
   // --- Renderizado Condicional de las Pantallas ---
 
@@ -155,17 +112,16 @@ export default function ConsultarPlanesPage() {
             {/* Columna de Planes */}
             <div className="md:col-span-1 space-y-2">
               <Label>Planes de estudio</Label>
-              <div className="border rounded-md p-2 h-80 overflow-y-auto bg-white">
-                {planesFiltrados.map(plan => (
+              <div className="border rounded-md p-2 h-80 bg-white">
+                {carreraData?.planDeEstudio ? (
                   <div
-                    key={plan.id}
-                    onClick={() => setSelectedPlan(plan)}
-                    className={`p-2 rounded cursor-pointer ${selectedPlan?.id === plan.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                    key={carreraData.planDeEstudio.id}
+                    className="p-2 rounded bg-blue-100" // Siempre seleccionado porque solo hay uno
                   >
-                    <p className="font-semibold">{plan.nombre}</p>
-                    <p className="text-xs text-gray-500">{plan.estado}</p>
+                    <p className="font-semibold">{carreraData.planDeEstudio.nombre}</p>
+                    <p className="text-xs text-gray-500">{carreraData.planDeEstudio.estado}</p>
                   </div>
-                ))}
+                ) : <p className="text-sm text-gray-500 p-4">Esta carrera no tiene un plan de estudio asociado.</p>}
               </div>
             </div>
 
@@ -173,11 +129,10 @@ export default function ConsultarPlanesPage() {
             <div className="md:col-span-1 space-y-2">
               <Label>Materias</Label>
               <div className="border rounded-md p-2 h-80 overflow-y-auto bg-white">
-                {selectedPlan ? selectedPlan.materias.map(materia => (
-                  <div key={materia.id} className="p-2 border-b">
-                    <p className="font-semibold">{materia.nombre}</p>
+                {selectedPlan ? selectedPlan.materias.map(item => (
+                  <div key={item.materia.id} className="p-2 border-b">
+                    <p className="font-semibold">{item.materia.nombre}</p>
                     <p className="text-xs text-gray-500">
-                      {materia.año}º año - {materia.creditos} créditos - {materia.tipo}
                     </p>
                   </div>
                 )) : <p className="text-sm text-gray-500 p-4">Seleccione un plan para ver sus materias.</p>}
@@ -185,20 +140,7 @@ export default function ConsultarPlanesPage() {
             </div>
             
             {/* Columna de Filtros */}
-            <div className="md:col-span-1 space-y-2">
-              <Label htmlFor="filtro-estado">Filtrar por Estado</Label>
-              <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-                <SelectTrigger id="filtro-estado">
-                  <SelectValue placeholder="Listado de estados" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="VIGENTE">Vigente</SelectItem>
-                  <SelectItem value="BORRADOR">Borrador</SelectItem>
-                  <SelectItem value="INACTIVO">Inactivo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="md:col-span-1 space-y-2"></div>
           </div>
           <div className="flex justify-end mt-6">
             <Button variant="outline" onClick={() => setStep('buscar')}>Volver</Button>
