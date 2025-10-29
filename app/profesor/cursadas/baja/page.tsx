@@ -5,8 +5,11 @@ import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useRouter } from "next/navigation"
 
 export default function BajaCursadaPage() {
+  const router = useRouter()
+
   const {
     register,
     handleSubmit,
@@ -14,8 +17,21 @@ export default function BajaCursadaPage() {
   } = useForm()
 
   const onSubmit = async (data: any) => {
-    console.log("Datos enviados:", data)
-    alert("Simulando baja de cursada...")
+    try {
+      const res = await fetch(`/api/cursadas/${data.id_materia}/estado`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: data.estado }),
+      })
+
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.message || "Error al actualizar la cursada")
+
+      // ✅ Redirección a página de éxito
+      router.push("/profesor/cursadas/baja/exito")
+    } catch (error: any) {
+      alert(`❌ ${error.message}`)
+    }
   }
 
   return (
@@ -28,16 +44,16 @@ export default function BajaCursadaPage() {
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8">
-          {/* Campos principales centrados horizontalmente */}
+          {/* Campos principales centrados */}
           <div className="flex justify-center gap-6">
             <div className="w-60 space-y-4">
               <div>
-                <Label htmlFor="id_materia">ID de la materia*</Label>
+                <Label htmlFor="id_materia">ID de la cursada*</Label>
                 <Input
                   id="id_materia"
                   type="text"
                   placeholder="Ej: 123"
-                  {...register("id_materia")}
+                  {...register("id_materia", { required: true })}
                 />
                 {errors.id_materia && (
                   <p className="text-sm text-red-600 mt-1">Campo obligatorio</p>
@@ -48,14 +64,12 @@ export default function BajaCursadaPage() {
                 <Label htmlFor="estado">Estado*</Label>
                 <select
                   id="estado"
-                  {...register("estado")}
+                  {...register("estado", { required: true })}
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Seleccionar...</option>
-                  <option value="Activa">Activa</option>
-                  <option value="Inactiva">Inactiva</option>
-                  <option value="Finalizada">Finalizada</option>
-                  <option value="Dada de baja">Dada de baja</option>
+                  <option value="CERRADA">Cerrada</option>
+                  <option value="CANCELADA">Cancelada</option>
                 </select>
                 {errors.estado && (
                   <p className="text-sm text-red-600 mt-1">Campo obligatorio</p>
@@ -64,7 +78,7 @@ export default function BajaCursadaPage() {
             </div>
           </div>
 
-          {/* Pie con cartel y botones (sin cambios) */}
+          {/* Pie con cartel y botones */}
           <div className="flex items-center justify-between pt-4">
             <p className="text-sm text-muted-foreground">
               Los campos etiquetados con * son obligatorios

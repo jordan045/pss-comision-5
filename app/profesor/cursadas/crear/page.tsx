@@ -6,10 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useRouter } from "next/navigation" // 👈 agregado
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+
+interface PlanOption {
+  id: number
+  label: string
+}
 
 export default function CrearCursadaPage() {
-  const router = useRouter() // 👈 agregado
+  const router = useRouter()
 
   const {
     register,
@@ -17,6 +23,27 @@ export default function CrearCursadaPage() {
     reset,
     formState: { isSubmitting, errors },
   } = useForm()
+
+  const [planes, setPlanes] = useState<PlanOption[]>([])
+  const [loadingPlanes, setLoadingPlanes] = useState(true)
+
+  useEffect(() => {
+    const fetchPlanes = async () => {
+      try {
+        const res = await fetch("/api/planes?estado=VIGENTE")
+        if (!res.ok) throw new Error("Error al obtener planes")
+        const data = await res.json()
+        setPlanes(data)
+      } catch (error) {
+        console.error("Error cargando planes:", error)
+        setPlanes([])
+      } finally {
+        setLoadingPlanes(false)
+      }
+    }
+
+    fetchPlanes()
+  }, [])
 
   const onSubmit = async (data: any) => {
     try {
@@ -31,17 +58,17 @@ export default function CrearCursadaPage() {
           cupoMaximo: parseInt(data.cupo_maximo),
           cupoActual: parseInt(data.cupo_actual) || 0,
           estado: data.estado.toUpperCase(),
-          planDeEstudioId: data.plan_estudio,
+          planDeEstudioId: parseInt(data.plan_estudio),
           observaciones: data.observaciones,
         }),
       })
 
       if (response.ok) {
         reset()
-        router.push("/profesor/cursadas/crear/exito") // 👈 redirección a la pantalla de éxito
+        router.push("/profesor/cursadas/crear/exito")
       } else {
         const errorData = await response.json()
-        alert(`⚠️ ${errorData.message}`) // muestra la validación
+        alert(`⚠️ ${errorData.message}`)
       }
     } catch (error) {
       console.error("Error en la creación:", error)
@@ -118,8 +145,26 @@ export default function CrearCursadaPage() {
               </div>
 
               <div>
-                <Label htmlFor="plan_estudio">Plan de Estudio ID*</Label>
-                <Input id="plan_estudio" {...register("plan_estudio", { required: true })} />
+                <Label htmlFor="plan_estudio">Plan de Estudio*</Label>
+                <select
+                  id="plan_estudio"
+                  {...register("plan_estudio", { required: true })}
+                  disabled={loadingPlanes}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  {loadingPlanes ? (
+                    <option>Cargando planes...</option>
+                  ) : planes.length > 0 ? (
+                    planes.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.label}
+                      </option>
+                    ))
+                  ) : (
+                    <option>No hay planes vigentes</option>
+                  )}
+                </select>
+                {errors.plan_estudio && <p className="text-sm text-red-600 mt-1">Campo obligatorio</p>}
               </div>
             </div>
 
@@ -132,9 +177,7 @@ export default function CrearCursadaPage() {
 
           {/* Botones */}
           <div className="flex items-center justify-between pt-4">
-            <p className="text-sm text-muted-foreground">
-              Los campos con * son obligatorios
-            </p>
+            <p className="text-sm text-muted-foreground">Los campos con * son obligatorios</p>
 
             <div className="flex gap-3">
               <Link href="/profesor/cursadas">
