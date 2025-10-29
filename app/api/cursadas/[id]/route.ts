@@ -5,8 +5,11 @@ import { prisma } from "@/lib/prisma"
 // GET /api/cursadas/:id  -> trae los datos de la cursada
 // PUT /api/cursadas/:id  -> modifica la cursada
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> } // 👈 antes era { id: string }
+) {
+  const { id } = await params
 
   const cursada = await prisma.cursada.findUnique({
     where: { id: parseInt(id) },
@@ -19,8 +22,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json(cursada)
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   const body = await req.json()
 
   try {
