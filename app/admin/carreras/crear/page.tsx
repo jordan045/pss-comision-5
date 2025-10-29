@@ -2,6 +2,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod";
@@ -19,18 +20,40 @@ import {
   type CarreraCreate,
 } from "@/lib/schemas/carreras"
 
+type PlanItem = { id: number; label: string }
+
 export default function CrearCarreraPage() {
+  const [planes, setPlanes] = useState<PlanItem[]>([])
+  const [cargandoPlanes, setCargandoPlanes] = useState(true)
+  const [errorPlanes, setErrorPlanes] = useState<string | null>(null)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/planes?estado=VIGENTE", { cache: "no-store" })
+        if (!res.ok) throw new Error("No se pudieron cargar los planes")
+        const data: PlanItem[] = await res.json()
+        setPlanes(data)
+      } catch (e: any) {
+        setErrorPlanes(e.message || "Error cargando planes")
+      } finally {
+        setCargandoPlanes(false)
+      }
+    })()
+  }, [])
+
+
   const router = useRouter()
 
   type FormT = z.infer<typeof CarreraCreateSchema>;
 
-const { register, handleSubmit, formState: { errors, isSubmitting }, reset } =
-  useForm<FormT>({
-    resolver: zodResolver(CarreraCreateSchema),
-    defaultValues: {
-      estado: "Activa",   // <-- definido; no uses Partial ni lo dejes afuera
-    },
-  });
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } =
+    useForm<FormT>({
+      resolver: zodResolver(CarreraCreateSchema),
+      defaultValues: {
+        estado: "Activa",   // <-- definido; no uses Partial ni lo dejes afuera
+      },
+    });
 
   const onSubmit = async (data: CarreraCreate) => {
     const payload = normalizarCarrera(data)
@@ -43,7 +66,7 @@ const { register, handleSubmit, formState: { errors, isSubmitting }, reset } =
       if (!res.ok) throw new Error()
       // opcional: limpiar form y/o redirigir
       reset()
-      router.push("/admin/carreras/crear?msg=creada")
+      router.push("/admin/carreras/exito")
     } catch {
       alert("No se pudo crear la carrera. Intentá nuevamente.")
     }
@@ -121,6 +144,33 @@ const { register, handleSubmit, formState: { errors, isSubmitting }, reset } =
               <Input id="facultad_asociada" placeholder="Ej: Facultad de Informática" {...register("facultad_asociada")} />
               {errors.facultad_asociada && (
                 <p className="text-xs text-red-600">{errors.facultad_asociada.message as string}</p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="plan_de_estudio_id" className="text-sm">Plan de estudio</Label>
+
+              {cargandoPlanes ? (
+                <div className="text-sm text-muted-foreground">Cargando planes…</div>
+              ) : errorPlanes ? (
+                <div className="text-sm text-red-600">{errorPlanes}</div>
+              ) : (
+                <select
+                  id="plan_de_estudio_id"
+                  className="w-full h-10 rounded-md border px-3 text-sm"
+                  // valueAsNumber es CLAVE para que Zod reciba number
+                  {...register("plan_de_estudio_id", { valueAsNumber: true })}
+                  defaultValue="" // obliga a elegir
+                >
+                  <option value="" disabled>Seleccionar plan</option>
+                  {planes.map(p => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+              )}
+
+              {errors.plan_de_estudio_id && (
+                <p className="text-xs text-red-600">{String(errors.plan_de_estudio_id.message)}</p>
               )}
             </div>
 
