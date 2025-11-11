@@ -11,7 +11,7 @@ export const NivelAcademicoEnum = z.enum([
 ])
 export type NivelAcademico = z.infer<typeof NivelAcademicoEnum>
 
-export const EstadoCarreraEnum = z.enum(["Activa", "Inactiva"])
+export const EstadoCarreraEnum = z.enum(["ACTIVA", "INACTIVA"])
 export type EstadoCarrera = z.infer<typeof EstadoCarreraEnum>
 
 /* ────────────────── Reglas y helpers reutilizables ────────────────── */

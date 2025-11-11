@@ -1,7 +1,8 @@
+// app/admin/inscripciones/exito/page.tsx
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-export default function ExitoMateriaModificada() {
+export default function InscripcionExitoPage() {
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
       <section className="w-full max-w-md text-center">
@@ -24,15 +25,15 @@ export default function ExitoMateriaModificada() {
             </div>
           </div>
 
-          <h2 className="text-2xl font-semibold mb-2">¡Materia modificada con éxito!</h2>
+          <h2 className="text-2xl font-semibold mb-2">¡Inscripción creada con éxito!</h2>
           
           <p className="text-gray-600 mb-6">
-            Los cambios se han guardado correctamente.
+            El alumno ha sido inscrito correctamente a la carrera.
           </p>
 
-          <Link href="/admin/materias">
+          <Link href="/admin/inscripciones">
             <Button className="w-full bg-black hover:bg-black/90">
-              Volver al listado
+              Volver a Gestión de Inscripciones
             </Button>
           </Link>
         </div>

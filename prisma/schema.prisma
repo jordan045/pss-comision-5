@@ -121,18 +121,29 @@ model Materia {
 // 4. Inscripciones
 // ---------------------------------------------------
 model InscripcionCarrera {
-  id                Int      @id @default(autoincrement())
+  id                Int                       @id @default(autoincrement())
   usuarioId         Int
   carreraId         Int
   planDeEstudioId   Int
-  fechaInscripcion  DateTime @default(now())
-  estado            String   @default("ACTIVA")
+  fechaInscripcion  DateTime                  @default(now())
+  estado            EstadoInscripcion         @default(ACTIVA)
+  modalidad         ModalidadInscripcion      @default(INSCRIPCION_POR_ALUMNO)
 
   usuario     Usuario       @relation(fields: [usuarioId], references: [id])
   carrera     Carrera       @relation(fields: [carreraId], references: [id])
   plan        PlanDeEstudio @relation(fields: [planDeEstudioId], references: [id])
 
   @@unique([usuarioId, carreraId])
+}
+
+enum EstadoInscripcion {
+  ACTIVA
+  INACTIVA
+}
+
+enum ModalidadInscripcion {
+  INSCRIPCION_POR_ALUMNO
+  INSCRIPCION_POR_ADMINISTRATIVO
 }
 
 // ---------------------------------------------------

@@ -51,7 +51,7 @@ export default function CrearCarreraPage() {
     useForm<FormT>({
       resolver: zodResolver(CarreraCreateSchema),
       defaultValues: {
-        estado: "Activa",   // <-- definido; no uses Partial ni lo dejes afuera
+        estado: "ACTIVA",   // <-- En mayúsculas para coincidir con la DB
       },
     });
 
