@@ -43,6 +43,7 @@ model Usuario {
   inscripciones        InscripcionCarrera[]
   cursadasDictadas     Cursada[]       @relation("DocentePrincipal")     // Cursadas donde es docente principal
   cursadasComoDocente  Cursada[]       @relation("DocentesAdicionales")  // Cursadas donde participa como docente adicional
+  inscripcionesCursada InscripcionCursada[]
 }
 
 model PasswordReset {
@@ -184,6 +185,7 @@ model Cursada {
   planDeEstudio       PlanDeEstudio    @relation(fields: [planDeEstudioId], references: [id])
   docentePrincipal    Usuario          @relation("DocentePrincipal", fields: [docentePrincipalId], references: [id])
   docentesAdicionales Usuario[]        @relation("DocentesAdicionales")
+  inscripciones       InscripcionCursada[]
 
   fechaCreacion       DateTime         @default(now())
   fechaModificacion   DateTime         @updatedAt
@@ -204,4 +206,37 @@ enum EstadoCursada {
   ACTIVA
   CERRADA
   CANCELADA
+}
+
+// ---------------------------------------------------
+// 8. Inscripción a Cursadas
+// ---------------------------------------------------
+model InscripcionCursada {
+  id                 Int                        @id @default(autoincrement())
+  usuarioId          Int
+  cursadaId          Int
+  fechaInscripcion   DateTime                   @default(now())
+  estado             EstadoInscripcionCursada   @default(ACTIVA)
+  modalidad          ModalidadInscripcion       @default(INSCRIPCION_POR_ALUMNO)
+  resultadoFinal     ResultadoFinal             @default(PENDIENTE)
+
+  // Relaciones
+  usuario            Usuario        @relation(fields: [usuarioId], references: [id])
+  cursada            Cursada        @relation(fields: [cursadaId], references: [id])
+
+  @@unique([usuarioId, cursadaId])
+  @@index([usuarioId])
+  @@index([cursadaId])
+}
+
+enum EstadoInscripcionCursada {
+  ACTIVA
+  BAJA
+  FINALIZADA
+}
+
+enum ResultadoFinal {
+  APROBADO
+  DESAPROBADO
+  PENDIENTE
 }
