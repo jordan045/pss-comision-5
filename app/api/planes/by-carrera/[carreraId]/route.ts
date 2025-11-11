@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma"
 // GET /api/planes/by-carrera/[carreraId]?estado=VIGENTE
 export async function GET(
   req: NextRequest,
-  { params }: { params: { carreraId: string } }
+  { params }: { params: Promise<{ carreraId: string }> }
 ) {
-  const carreraId = parseInt(params.carreraId, 10)
+  const { carreraId: carreraIdStr } = await params
+  const carreraId = parseInt(carreraIdStr, 10)
   
   if (isNaN(carreraId)) {
     return NextResponse.json(
