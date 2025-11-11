@@ -52,15 +52,14 @@ type CursadaInfo = {
 type CursadaOption = {
   id: number
   materia: string
-  codigoMateria: string
   cuatrimestre: string
   anio: number
   estado: string
   docente: string
 }
 
-export default function ListaInscriptosProfesorPage() {
-  const [cursadasProfesor, setCursadasProfesor] = useState<CursadaOption[]>([])
+export default function ListaInscriptosCursadaPage() {
+  const [cursadasActivas, setCursadasActivas] = useState<CursadaOption[]>([])
   const [cursadaSeleccionada, setCursadaSeleccionada] = useState<number | null>(null)
   const [cursadaInfo, setCursadaInfo] = useState<CursadaInfo | null>(null)
   const [inscriptos, setInscriptos] = useState<Inscripto[]>([])
@@ -77,14 +76,16 @@ export default function ListaInscriptosProfesorPage() {
   // Estado de ordenamiento
   const [ordenamiento, setOrdenamiento] = useState<"alfabetico" | "dni">("alfabetico")
 
-  // Cargar cursadas del profesor al montar
+  // Cargar cursadas activas y finalizadas al montar
   useEffect(() => {
     const cargarCursadas = async () => {
       try {
-        const res = await fetch("/api/cursadas/profesor")
+        const res = await fetch("/api/cursadas")
         if (!res.ok) throw new Error("Error al cargar cursadas")
         const data: CursadaOption[] = await res.json()
-        setCursadasProfesor(data)
+        
+        // Filtrar solo cursadas activas (se puede ajustar según necesidad)
+        setCursadasActivas(data)
       } catch (error) {
         console.error("Error cargando cursadas:", error)
         setError("No se pudieron cargar las cursadas")
@@ -104,7 +105,7 @@ export default function ListaInscriptosProfesorPage() {
     setError(null)
 
     try {
-      const res = await fetch(`/api/cursadas/profesor/${cursadaSeleccionada}/inscriptos`)
+      const res = await fetch(`/api/cursadas/${cursadaSeleccionada}/inscriptos`)
       if (!res.ok) {
         const errorData = await res.json()
         throw new Error(errorData.error || "Error al cargar inscriptos")
@@ -206,7 +207,7 @@ export default function ListaInscriptosProfesorPage() {
       <div className="w-full max-w-7xl mx-auto">
         <header className="text-center mb-8">
           <h2 className="text-3xl font-semibold mb-2">Gestión de Cursadas</h2>
-          <p className="text-lg text-muted-foreground">Generar Lista de Inscriptos</p>
+          <p className="text-lg text-muted-foreground">Generar Lista de Inscriptos a Cursadas</p>
         </header>
 
         {/* Sección de selección de cursada */}
@@ -217,7 +218,7 @@ export default function ListaInscriptosProfesorPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
               <div className="flex-1">
-                <Label htmlFor="cursada">Mis Cursadas*</Label>
+                <Label htmlFor="cursada">Cursada*</Label>
                 <select
                   id="cursada"
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -225,9 +226,9 @@ export default function ListaInscriptosProfesorPage() {
                   onChange={(e) => setCursadaSeleccionada(Number(e.target.value) || null)}
                 >
                   <option value="">Seleccione una cursada</option>
-                  {cursadasProfesor.map((cursada) => (
+                  {cursadasActivas.map((cursada) => (
                     <option key={cursada.id} value={cursada.id}>
-                      {cursada.materia} ({cursada.codigoMateria}) - {cursada.cuatrimestre} {cursada.anio} - {cursada.estado}
+                      {cursada.materia} - {cursada.cuatrimestre} {cursada.anio} - {cursada.docente} ({cursada.estado})
                     </option>
                   ))}
                 </select>
@@ -503,7 +504,7 @@ export default function ListaInscriptosProfesorPage() {
 
         {/* Botón volver */}
         <div className="mt-6 text-center">
-          <Link href="/profesor/cursadas">
+          <Link href="/admin/cursadas">
             <Button variant="outline" className="w-full max-w-md">
               Volver a Gestión de Cursadas
             </Button>

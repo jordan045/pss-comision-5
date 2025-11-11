@@ -63,7 +63,7 @@ export default function AdminCrearInscripcionCursada() {
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
       <section className="w-full max-w-xl space-y-6">
-        <h2 className="text-center text-2xl font-semibold">Inscribir alumno a cursada (Admin)</h2>
+        <h2 className="text-center text-2xl font-semibold">Inscribir Alumno a Cursada</h2>
 
         {/* Buscar por DNI */}
         <div className="rounded-2xl border bg-white p-6 shadow-sm space-y-3">

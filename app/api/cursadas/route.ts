@@ -17,6 +17,7 @@ export async function GET() {
     docente: `${c.docentePrincipal.nombre} ${c.docentePrincipal.apellido}`,
     cuatrimestre: c.cuatrimestre,
     anio: c.anio,
+    estado: c.estado,
   }))
 
   return NextResponse.json(data)
