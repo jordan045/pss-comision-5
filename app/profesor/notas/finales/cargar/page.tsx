@@ -48,7 +48,7 @@ const CalificacionCreateSchema = z.object({
 }, {
   // Mensaje si la nota no coincide con el tipo
   message: "Debes ingresar una nota válida para el tipo seleccionado",
-  path: ["notaNumerica"],
+  path: ["tipoNota"],
 });
 
 type FormT = z.infer<typeof CalificacionCreateSchema>;
@@ -86,14 +86,7 @@ export default function CargarNotaFinalPage() {
         const res = await fetch(`/api/mesa-examen?estado=CERRADA&docenteId=${idProfesor}`)
          if (!res.ok) throw new Error("No se pudieron cargar las mesas")
         const data: MesaItem[] = await res.json()
-        /*
-        // --- Datos Mock  ---
-        await new Promise(resolve => setTimeout(resolve, 500))
-        const data: MesaItem[] = [
-          { id: 1, label: "Álgebra I - Mesa 1 (01/08/2024)", cursadaId: 1 },
-          { id: 2, label: "Programación I - Mesa 1 (02/08/2024)", cursadaId: 102 },
-        ]*/
-        // --- Fin Mock ---
+
 
         setMesas(data)
         setErrorMesas(null)
@@ -127,13 +120,6 @@ export default function CargarNotaFinalPage() {
         if (!res.ok) throw new Error("No se pudieron cargar los alumnos")
          const data: AlumnoItem[] = await res.json()
 
-        // --- Datos Mock (BORRAR ESTO) ---/*
-        /*
-          { id: 2, label: "Gómez, Juan (30.123.456)" },
-          { id: 11, label: "Pérez, María (31.456.789)" },
-        */
-        // --- Fin Mock ---
-
         setAlumnos(data)
       } catch (e: any) {
         console.error("Error al cargar alumnos:", e)
@@ -150,7 +136,7 @@ export default function CargarNotaFinalPage() {
     const payload: any = {
       ...data,
       cursadaId: selectedCursadaId, 
-      docenteResoponsableId: idProfesor
+      docenteResponsableId: idProfesor
     };
 
     if (data.tipoNota === 'numerica') {
@@ -260,7 +246,7 @@ export default function CargarNotaFinalPage() {
                 {...register("tipoNota")}
               >
                 <option value="numerica">Numérica (1-10)</option>
-                <option value="conceptual">Conceptual (Aprob/Desaprob)</option>
+                {/*<option value="conceptual">Conceptual (Aprob/Desaprob)</option>*/}
               </select>
             </div>
 
@@ -288,7 +274,7 @@ export default function CargarNotaFinalPage() {
                   id="notaConceptual"
                   className="w-full h-10 rounded-md border px-3 text-sm"
                   {...register("notaConceptual")}
-                  defaultValue=""
+                  defaultValue="DESAPROBADO"
                 >
                   <option value="" disabled>Seleccionar resultado</option>
                   <option value="APROBADO">Aprobado</option>
