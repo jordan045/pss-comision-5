@@ -39,11 +39,18 @@ model Usuario {
   // Rol = ADMINISTRATIVO
   obraSocial        String?
 
+  inscripcionesMesaExamen     InscripcionMesaExamen[]
+
   // ---- Relaciones ----
   inscripciones        InscripcionCarrera[]
   cursadasDictadas     Cursada[]       @relation("DocentePrincipal")     // Cursadas donde es docente principal
   cursadasComoDocente  Cursada[]       @relation("DocentesAdicionales")  // Cursadas donde participa como docente adicional
   inscripcionesCursada InscripcionCursada[]
+
+
+  // --- Relaciones para Calificaciones (US 11) ---
+  calificacionesFinales         CalificacionFinal[] @relation("CalificacionesAlumno")
+  calificacionesComoResponsable CalificacionFinal[] @relation("CalificacionesDocente")
 }
 
 model PasswordReset {
@@ -116,6 +123,7 @@ model Materia {
   planes            MateriaPlan[]
   correlativas      MateriaPlan[] @relation("Correlativas")
   cursadas          Cursada[]
+  mesasDeExamen MesaDeExamen[]
 }
 
 // ---------------------------------------------------
@@ -190,6 +198,9 @@ model Cursada {
   fechaCreacion       DateTime         @default(now())
   fechaModificacion   DateTime         @updatedAt
 
+mesasDeExamen         MesaDeExamen[]
+  calificacionesFinales CalificacionFinal[] @relation("CalificacionesCursada")
+
   // Restricción: no pueden existir dos cursadas activas con mismo docente principal, materia y cuatrimestre
   @@unique([materiaId, docentePrincipalId, cuatrimestre, anio], name: "cursada_unica_docente")
 }
@@ -229,6 +240,8 @@ model InscripcionCursada {
   @@index([cursadaId])
 }
 
+
+
 enum EstadoInscripcionCursada {
   ACTIVA
   BAJA
@@ -239,4 +252,103 @@ enum ResultadoFinal {
   APROBADO
   DESAPROBADO
   PENDIENTE
+}
+
+
+
+//-------------------------------------
+// 11. Calificaciones finales
+//--------------------------------------
+
+model CalificacionFinal {
+  id                   Int                @id @default(autoincrement())
+  alumnoId             Int
+  mesaDeExamenId       Int
+  cursadaId            Int
+  docenteResponsableId Int
+  notaNumerica         Int?
+  notaConceptual       NotaConceptual?    
+  fechaRegistro        DateTime           @default(now())
+  observaciones        String?            @db.VarChar(300)
+  estado               EstadoCalificacion @default(BORRADOR)
+  //relaciones
+  alumno               Usuario            @relation("CalificacionesAlumno", fields: [alumnoId], references: [id])
+  mesaDeExamen         MesaDeExamen       @relation(fields: [mesaDeExamenId], references: [id])
+  cursada              Cursada            @relation("CalificacionesCursada", fields: [cursadaId], references: [id])
+  docenteResponsable   Usuario            @relation("CalificacionesDocente", fields: [docenteResponsableId], references: [id])
+
+  @@unique([alumnoId, mesaDeExamenId], name: "calificacion_unica_alumno_mesa")
+
+  @@index([alumnoId])
+  @@index([mesaDeExamenId])
+  @@index([cursadaId])
+  @@index([docenteResponsableId])
+}
+
+enum NotaConceptual {
+  APROBADO
+  DESAPROBADO
+}
+enum EstadoCalificacion {
+  BORRADOR
+  DEFINITIVA
+}
+
+//-------------------------
+// Esto se reemplaza con la user story 12 de mesa de examenes
+//----------------------------------
+
+model MesaDeExamen {
+  id                Int       @id @default(autoincrement())
+  materiaId         Int
+  cursadaId         Int
+  fecha             DateTime
+  cierreInscripcion DateTime
+  estado            EstadoMesaExamen @default(ABIERTA)
+  libro             String?
+  folio             String?
+  observaciones     String?
+
+  // Relaciones
+  materia           Materia                   @relation(fields: [materiaId], references: [id])
+  cursada           Cursada                   @relation(fields: [cursadaId], references: [id])
+  inscripciones     InscripcionMesaExamen[]
+  calificacionesFinales CalificacionFinal[]
+
+  fechaCreacion     DateTime  @default(now())
+  fechaModificacion DateTime  @updatedAt
+
+  @@index([materiaId])
+  @@index([cursadaId])
+}
+
+model InscripcionMesaExamen {
+  id               Int       @id @default(autoincrement())
+  usuarioId        Int
+  mesaDeExamenId   Int
+  fechaInscripcion DateTime  @default(now())
+  nota             Int?
+  estado           EstadoInscripcionExamen @default(INSCRIPTO)
+  observaciones    String?
+
+  // Relaciones
+  usuario          Usuario     @relation(fields: [usuarioId], references: [id])  
+  mesaDeExamen     MesaDeExamen @relation(fields: [mesaDeExamenId], references: [id])
+
+  @@unique([usuarioId, mesaDeExamenId])
+  @@index([usuarioId])
+  @@index([mesaDeExamenId])
+}
+
+enum EstadoMesaExamen {
+  ABIERTA
+  CERRADA
+  CANCELADA
+}
+
+enum EstadoInscripcionExamen {
+  INSCRIPTO
+  APROBADO
+  DESAPROBADO
+  AUSENTE
 }
